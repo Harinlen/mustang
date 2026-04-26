@@ -149,11 +149,10 @@ class TestSectionInjection:
         language_sections = [s for s in sections if s.text.startswith("# Language\n")]
         assert language_sections[0].cache is True
 
-    async def test_placement_immediately_after_env_context(self, prompts: PromptManager) -> None:
-        """CC (prompts.ts:499-504) puts language after ``env_info_simple``
-        and before ``mcp_instructions``.  Mustang's env context is the
-        dynamic section that precedes language; nothing cacheable should
-        be emitted between them."""
+    async def test_placement_before_env_context(self, prompts: PromptManager) -> None:
+        """Mustang places ``# Environment`` last (it carries a live
+        timestamp).  ``# Language`` is cacheable and must therefore live
+        in the stable prefix, strictly before env context."""
         sections = await _build_sections(prompts, language="English")
         env_idx: int | None = None
         lang_idx: int | None = None
@@ -164,8 +163,8 @@ class TestSectionInjection:
                 lang_idx = i
         assert env_idx is not None, "env context section missing"
         assert lang_idx is not None, "language section missing"
-        assert lang_idx == env_idx + 1, (
-            f"language must come immediately after env context; "
+        assert lang_idx < env_idx, (
+            f"language must precede env context (env is last); "
             f"got env_idx={env_idx}, lang_idx={lang_idx}"
         )
 

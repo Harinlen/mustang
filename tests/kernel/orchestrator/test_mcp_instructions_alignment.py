@@ -200,10 +200,11 @@ class TestSectionInjection:
 
 
 class TestPlacement:
-    async def test_immediately_after_language_when_language_set(
+    async def test_after_language_and_before_env_when_language_set(
         self, prompts: PromptManager
     ) -> None:
-        """CC ordering: env → language → mcp_instructions (prompts.ts:499-520)."""
+        """Mustang ordering: language (cacheable) → mcp_instructions
+        (volatile) → env (last, with timestamp)."""
         sections = await _build_sections(
             prompts,
             mcp_instructions=lambda: [("srv", "instr")],
@@ -211,21 +212,27 @@ class TestPlacement:
         )
         lang_idx: int | None = None
         mcp_idx: int | None = None
+        env_idx: int | None = None
         for i, s in enumerate(sections):
             if s.text.startswith("# Language\n"):
                 lang_idx = i
             elif s.text.startswith(_CC_HEADER):
                 mcp_idx = i
+            elif s.text.startswith("# Environment\n"):
+                env_idx = i
         assert lang_idx is not None, "language section missing"
         assert mcp_idx is not None, "mcp section missing"
-        assert mcp_idx == lang_idx + 1, (
-            f"mcp must come immediately after language; "
-            f"got lang_idx={lang_idx}, mcp_idx={mcp_idx}"
+        assert env_idx is not None, "env section missing"
+        assert lang_idx < mcp_idx < env_idx, (
+            f"expected language < mcp < env; "
+            f"got lang_idx={lang_idx}, mcp_idx={mcp_idx}, env_idx={env_idx}"
         )
 
-    async def test_immediately_after_env_when_no_language(
+    async def test_before_env_when_no_language(
         self, prompts: PromptManager
     ) -> None:
+        """Without a language section, mcp_instructions still belongs in
+        the volatile block before the trailing env context."""
         sections = await _build_sections(
             prompts,
             mcp_instructions=lambda: [("srv", "instr")],
@@ -240,8 +247,8 @@ class TestPlacement:
                 mcp_idx = i
         assert env_idx is not None, "env section missing"
         assert mcp_idx is not None, "mcp section missing"
-        assert mcp_idx == env_idx + 1, (
-            f"mcp must come immediately after env when language absent; "
+        assert mcp_idx < env_idx, (
+            f"mcp must precede env (env is last); "
             f"got env_idx={env_idx}, mcp_idx={mcp_idx}"
         )
 
