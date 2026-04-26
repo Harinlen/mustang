@@ -1,0 +1,16 @@
+{
+  "name": "mustang-cli",
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "start": "bun run src/main.ts",
+    "test": "bun run tests/run_all.ts"
+  },
+  "dependencies": {
+    "ws": "^8",
+    "chalk": "^5"
+  },
+  "devDependencies": {
+    "@types/ws": "^8"
+  }
+}

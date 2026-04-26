@@ -1,0 +1,358 @@
+"""End-to-end tests for AcpSessionHandler.
+
+Tests the full dispatch path: raw JSON-RPC string → codec.decode →
+dispatcher.dispatch → codec.encode → JSON-RPC response string.
+
+The SessionManager subsystem is replaced by a ``FakeSessionHandler``
+so tests run without a real kernel process.
+"""
+
+from __future__ import annotations
+
+import json
+from datetime import datetime, timezone
+from typing import Any
+from unittest.mock import AsyncMock, MagicMock
+
+import pytest
+
+from kernel.connection_auth.context import AuthContext
+from kernel.protocol.acp.codec import AcpCodec
+from kernel.protocol.acp.session_handler import AcpSessionHandler
+from kernel.protocol.interfaces.contracts.list_sessions_result import (
+    ListSessionsResult,
+)
+from kernel.protocol.interfaces.contracts.new_session_result import (
+    NewSessionResult,
+)
+from kernel.protocol.interfaces.contracts.prompt_result import PromptResult
+
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+
+def _make_auth(conn_id: str = "conn-e2e-test") -> AuthContext:
+    return AuthContext(
+        connection_id=conn_id,
+        credential_type="token",
+        remote_addr="127.0.0.1:1234",
+        authenticated_at=datetime.now(timezone.utc),
+    )
+
+
+def _make_module_table(session_handler: Any) -> MagicMock:
+    """Return a minimal module_table mock that returns ``session_handler``."""
+
+    mt = MagicMock()
+    mt.get.return_value = session_handler
+    return mt
+
+
+async def _collect(aiter) -> list:
+    return [item async for item in aiter]
+
+
+# ---------------------------------------------------------------------------
+# Fixtures
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def codec() -> AcpCodec:
+    return AcpCodec()
+
+
+@pytest.fixture
+def fake_session_handler():
+    """Minimal ``SessionHandler`` that satisfies the Protocol."""
+    handler = MagicMock()
+    handler.new = AsyncMock(return_value=NewSessionResult(session_id="sess-001"))
+    handler.list = AsyncMock(return_value=ListSessionsResult(sessions=[], next_cursor=None))
+    handler.prompt = AsyncMock(return_value=PromptResult(stop_reason="end_turn"))
+    handler.cancel = AsyncMock(return_value=None)
+    return handler
+
+
+@pytest.fixture
+def dispatcher(fake_session_handler) -> AcpSessionHandler:
+    mt = _make_module_table(fake_session_handler)
+    return AcpSessionHandler(mt)
+
+
+@pytest.fixture
+def auth() -> AuthContext:
+    return _make_auth()
+
+
+# ---------------------------------------------------------------------------
+# Full encode→dispatch→decode round-trips
+# ---------------------------------------------------------------------------
+
+
+async def _round_trip(
+    codec: AcpCodec,
+    dispatcher: AcpSessionHandler,
+    auth: AuthContext,
+    raw_in: str,
+) -> list[dict]:
+    """Decode → dispatch → encode, return list of parsed response frames."""
+    msg = codec.decode(raw_in)
+    frames = []
+    async for out in dispatcher.dispatch(msg, auth):
+        frames.append(json.loads(codec.encode(out)))
+    return frames
+
+
+def _initialize_frame(conn_id: str = "conn-e2e-test") -> str:
+    return json.dumps(
+        {
+            "jsonrpc": "2.0",
+            "id": 0,
+            "method": "initialize",
+            "params": {
+                "protocolVersion": 1,
+                "clientInfo": {"name": "test-client", "title": "Test"},
+            },
+        }
+    )
+
+
+class TestInitializeFlow:
+    @pytest.mark.anyio
+    async def test_initialize_returns_capabilities(
+        self, codec: AcpCodec, dispatcher: AcpSessionHandler, auth: AuthContext
+    ) -> None:
+        frames = await _round_trip(codec, dispatcher, auth, _initialize_frame())
+        assert len(frames) == 1
+        result = frames[0]["result"]
+        # ACP wire format uses camelCase
+        assert result["protocolVersion"] == 1
+        assert result["agentCapabilities"]["loadSession"] is True
+        assert result["authMethods"] == []
+
+    @pytest.mark.anyio
+    async def test_initialize_twice_returns_error(
+        self, codec: AcpCodec, dispatcher: AcpSessionHandler, auth: AuthContext
+    ) -> None:
+        await _round_trip(codec, dispatcher, auth, _initialize_frame())
+        frames = await _round_trip(codec, dispatcher, auth, _initialize_frame())
+        assert frames[0]["error"]["code"] == -32600
+
+    @pytest.mark.anyio
+    async def test_session_new_before_initialize_returns_error(
+        self, codec: AcpCodec, dispatcher: AcpSessionHandler, auth: AuthContext
+    ) -> None:
+        raw = json.dumps(
+            {
+                "jsonrpc": "2.0",
+                "id": 1,
+                "method": "session/new",
+                "params": {"cwd": "/tmp", "mcpServers": []},
+            }
+        )
+        frames = await _round_trip(codec, dispatcher, auth, raw)
+        assert frames[0]["error"]["code"] == -32600
+        assert "initialize" in frames[0]["error"]["message"]
+
+
+class TestSessionNewFlow:
+    @pytest.mark.anyio
+    async def test_session_new_returns_session_id(
+        self,
+        codec: AcpCodec,
+        dispatcher: AcpSessionHandler,
+        auth: AuthContext,
+        fake_session_handler,
+    ) -> None:
+        await _round_trip(codec, dispatcher, auth, _initialize_frame())
+        raw = json.dumps(
+            {
+                "jsonrpc": "2.0",
+                "id": 1,
+                "method": "session/new",
+                "params": {"cwd": "/home/user/project", "mcpServers": []},
+            }
+        )
+        frames = await _round_trip(codec, dispatcher, auth, raw)
+        assert len(frames) == 1
+        assert frames[0]["result"]["sessionId"] == "sess-001"
+        fake_session_handler.new.assert_called_once()
+
+    @pytest.mark.anyio
+    async def test_session_new_passes_cwd(
+        self,
+        codec: AcpCodec,
+        dispatcher: AcpSessionHandler,
+        auth: AuthContext,
+        fake_session_handler,
+    ) -> None:
+        await _round_trip(codec, dispatcher, auth, _initialize_frame())
+        raw = json.dumps(
+            {
+                "jsonrpc": "2.0",
+                "id": 2,
+                "method": "session/new",
+                "params": {"cwd": "/workspace", "mcpServers": []},
+            }
+        )
+        await _round_trip(codec, dispatcher, auth, raw)
+        call_params = fake_session_handler.new.call_args[0][1]
+        assert call_params.cwd == "/workspace"
+
+
+class TestSessionListFlow:
+    @pytest.mark.anyio
+    async def test_session_list_returns_empty(
+        self,
+        codec: AcpCodec,
+        dispatcher: AcpSessionHandler,
+        auth: AuthContext,
+    ) -> None:
+        await _round_trip(codec, dispatcher, auth, _initialize_frame())
+        raw = json.dumps(
+            {
+                "jsonrpc": "2.0",
+                "id": 3,
+                "method": "session/list",
+                "params": {},
+            }
+        )
+        frames = await _round_trip(codec, dispatcher, auth, raw)
+        assert frames[0]["result"]["sessions"] == []
+        # nextCursor is None → excluded by exclude_none=True
+        assert "nextCursor" not in frames[0]["result"]
+
+
+class TestUnknownMethod:
+    @pytest.mark.anyio
+    async def test_unknown_method_returns_method_not_found(
+        self, codec: AcpCodec, dispatcher: AcpSessionHandler, auth: AuthContext
+    ) -> None:
+        await _round_trip(codec, dispatcher, auth, _initialize_frame())
+        raw = json.dumps(
+            {
+                "jsonrpc": "2.0",
+                "id": 99,
+                "method": "totally/unknown",
+                "params": {},
+            }
+        )
+        frames = await _round_trip(codec, dispatcher, auth, raw)
+        assert frames[0]["error"]["code"] == -32601
+
+
+class TestNotificationFlow:
+    @pytest.mark.anyio
+    async def test_cancel_notification_no_response(
+        self,
+        codec: AcpCodec,
+        dispatcher: AcpSessionHandler,
+        auth: AuthContext,
+        fake_session_handler,
+    ) -> None:
+        """session/cancel is a notification — must produce no response frame."""
+        await _round_trip(codec, dispatcher, auth, _initialize_frame())
+        raw = json.dumps(
+            {
+                "jsonrpc": "2.0",
+                "method": "session/cancel",
+                "params": {"sessionId": "sess-001"},
+            }
+        )
+        frames = await _round_trip(codec, dispatcher, auth, raw)
+        assert frames == []
+        fake_session_handler.cancel.assert_called_once()
+
+    @pytest.mark.anyio
+    async def test_unknown_notification_silently_ignored(
+        self, codec: AcpCodec, dispatcher: AcpSessionHandler, auth: AuthContext
+    ) -> None:
+        """Unknown notifications MUST be silently ignored (JSON-RPC 2.0 spec)."""
+        await _round_trip(codec, dispatcher, auth, _initialize_frame())
+        raw = json.dumps(
+            {
+                "jsonrpc": "2.0",
+                "method": "$/some_future_notification",
+                "params": {},
+            }
+        )
+        frames = await _round_trip(codec, dispatcher, auth, raw)
+        assert frames == []
+
+
+class TestDisconnect:
+    @pytest.mark.anyio
+    async def test_on_disconnect_cleans_up(
+        self, dispatcher: AcpSessionHandler, auth: AuthContext
+    ) -> None:
+        # Trigger connection registration by decoding a frame.
+        codec = AcpCodec()
+        await _round_trip(codec, dispatcher, auth, _initialize_frame())
+        assert auth.connection_id in dispatcher._connections
+        await dispatcher.on_disconnect(auth)
+        assert auth.connection_id not in dispatcher._connections
+
+    @pytest.mark.anyio
+    async def test_on_disconnect_idempotent(
+        self, dispatcher: AcpSessionHandler, auth: AuthContext
+    ) -> None:
+        """Calling on_disconnect twice must not raise."""
+        await dispatcher.on_disconnect(auth)
+        await dispatcher.on_disconnect(auth)
+
+
+class TestNotificationErrorHandling:
+    @pytest.mark.anyio
+    async def test_notification_handler_exception_does_not_close_connection(
+        self,
+        codec: AcpCodec,
+        dispatcher: AcpSessionHandler,
+        auth: AuthContext,
+        fake_session_handler,
+    ) -> None:
+        """Notification errors must be swallowed — never propagate to transport."""
+        fake_session_handler.cancel = AsyncMock(side_effect=RuntimeError("boom"))
+        await _round_trip(codec, dispatcher, auth, _initialize_frame())
+        raw = json.dumps(
+            {
+                "jsonrpc": "2.0",
+                "method": "session/cancel",
+                "params": {"sessionId": "sess-001"},
+            }
+        )
+        # Must not raise, must return no frames.
+        frames = await _round_trip(codec, dispatcher, auth, raw)
+        assert frames == []
+
+        # Connection still usable — subsequent request works.
+        raw2 = json.dumps(
+            {
+                "jsonrpc": "2.0",
+                "id": 99,
+                "method": "session/list",
+                "params": {},
+            }
+        )
+        frames2 = await _round_trip(codec, dispatcher, auth, raw2)
+        assert len(frames2) == 1
+
+
+class TestInvalidParams:
+    @pytest.mark.anyio
+    async def test_invalid_params_returns_32602(
+        self, codec: AcpCodec, dispatcher: AcpSessionHandler, auth: AuthContext
+    ) -> None:
+        await _round_trip(codec, dispatcher, auth, _initialize_frame())
+        # session/new requires cwd; omit it to trigger validation error.
+        raw = json.dumps(
+            {
+                "jsonrpc": "2.0",
+                "id": 5,
+                "method": "session/new",
+                "params": {"mcpServers": []},  # missing cwd
+            }
+        )
+        frames = await _round_trip(codec, dispatcher, auth, raw)
+        assert frames[0]["error"]["code"] == -32602
