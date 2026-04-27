@@ -16,6 +16,7 @@ from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
+from .llm_text import collect_llm_text
 from .index import MemoryIndex
 from .types import (
     CATEGORIES,
@@ -314,16 +315,14 @@ class RelevanceSelector:
         """Call the LLM provider for scoring. Subclasses can override."""
         if self._llm is None:
             return "[]"
-        # Use the provider's stream interface, collect full response
-        chunks: list[str] = []
-        async for event in self._llm.stream(
-            model=self._model or "default",
-            messages=[{"role": "user", "content": prompt}],
+        return await collect_llm_text(
+            self._llm,
+            model=self._model,
+            prompt=prompt,
+            system_text="Score Mustang memory entries for relevance. Return only valid JSON.",
+            temperature=0.0,
             max_tokens=2000,
-        ):
-            if hasattr(event, "text"):
-                chunks.append(event.text)
-        return "".join(chunks)
+        )
 
     def _parse_llm_response(
         self,

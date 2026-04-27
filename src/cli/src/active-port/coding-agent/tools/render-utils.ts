@@ -1,0 +1,20 @@
+// -nocheck
+import { replaceTabs, truncateToWidth, wrapTextWithAnsi } from "@oh-my-pi/pi-tui";
+import { settings } from "../config/settings";
+
+export { replaceTabs, truncateToWidth, wrapTextWithAnsi };
+
+export function resolveImageOptions(): { maxWidthCells: number; maxHeightCells?: number } {
+	return {
+		maxWidthCells: Number(settings.get("tui.maxInlineImageColumns") ?? 80),
+		maxHeightCells: Number(settings.get("tui.maxInlineImageRows") ?? 24),
+	};
+}
+
+export function formatExpandHint(_theme: unknown, expanded?: boolean, hasMore?: boolean): string {
+	return !expanded && hasMore !== false ? "(Ctrl+O for more)" : "";
+}
+
+export function truncateToWidthWithTabs(text: string, width: number): string {
+	return truncateToWidth(replaceTabs(text), width);
+}

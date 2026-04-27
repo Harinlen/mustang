@@ -7,10 +7,15 @@
     "test": "bun run tests/run_all.ts"
   },
   "dependencies": {
-    "ws": "^8",
-    "chalk": "^5"
+    "@sinclair/typebox": "^0.34",
+    "chalk": "^5",
+    "diff": "^9.0.0",
+    "marked": "^15",
+    "string-width": "^7",
+    "ws": "^8"
   },
   "devDependencies": {
+    "@types/bun": "^1.3.13",
     "@types/ws": "^8"
   }
 }

@@ -16,6 +16,7 @@ import logging
 from pathlib import Path
 from typing import Any
 
+from .llm_text import collect_llm_text
 from . import store
 from .index import MemoryIndex
 from .types import (
@@ -377,15 +378,14 @@ class BackgroundMemoryAgent:
         """Call the LLM provider for background operations."""
         if self._llm is None:
             return "[]"
-        chunks: list[str] = []
-        async for event in self._llm.stream(
-            model=self._model or "default",
-            messages=[{"role": "user", "content": prompt}],
+        return await collect_llm_text(
+            self._llm,
+            model=self._model,
+            prompt=prompt,
+            system_text="Maintain Mustang memory entries. Return only valid JSON.",
+            temperature=0.0,
             max_tokens=2000,
-        ):
-            if hasattr(event, "text"):
-                chunks.append(event.text)
-        return "".join(chunks)
+        )
 
 
 # ---------------------------------------------------------------------------

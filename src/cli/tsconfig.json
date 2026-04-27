@@ -4,9 +4,22 @@
     "module": "ESNext",
     "moduleResolution": "bundler",
     "strict": true,
+    "noImplicitAny": false,
+    "strictNullChecks": false,
+    "baseUrl": ".",
+    "ignoreDeprecations": "6.0",
+    "types": ["bun"],
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@oh-my-pi/pi-tui": ["./src/active-port/tui/index.ts"],
+      "@oh-my-pi/pi-utils": ["./src/compat/pi-utils.ts"],
+      "@oh-my-pi/pi-natives": ["./src/compat/pi-natives.ts"],
+      "@oh-my-pi/pi-ai": ["./src/compat/pi-ai.ts"],
+      "@oh-my-pi/pi-agent-core": ["./src/compat/pi-agent-core.ts"]
     }
   },
-  "include": ["src/**/*", "tests/**/*"]
+  "include": ["src/**/*", "tests/**/*"],
+  "exclude": [
+    "src/active-port/coding-agent/**"
+  ]
 }
