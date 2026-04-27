@@ -216,256 +216,56 @@ KERNEL_URL=ws://localhost:8765 MUSTANG_TOKEN=dev bun run src/cli/tests/run_all.t
 
 ### Phase B — 完整 TUI（P1）
 
-**目标**：迁移 oh-my-pi 的 TUI 运行时、组件和交互控制器，达到接近
-oh-my-pi `omp` 的视觉效果与输入行为。
+详细执行方案已拆分到
+[`docs/plans/cli-phase-b-tui-migration.md`](cli-phase-b-tui-migration.md)。
 
-**迁移原则**：Phase B 不是“重写一个相似 TUI”，而是 **保留式迁移**：
+**目标**：按需迁移 oh-my-pi 的 TUI runtime、components、controllers 和
+`interactive-mode.ts` 主路径，让 Mustang CLI 的视觉效果与输入行为和 oh-my-pi
+`omp` 完全一致。
 
-- 能直接 vendor 的 TUI / component / controller 代码直接 vendor。
-- 组件内部的 render 逻辑尽量不改，避免手写 UI 带来的视觉漂移和边界 bug。
-- 用 Mustang 的 compat/shim 层满足 oh-my-pi 原始 imports。
-- 用 ACP-backed session adapter 替换 oh-my-pi 的 `AgentSession`，让原 UI 代码继续
-  消费接近 oh-my-pi 的事件模型。
-- 只在边界层改协议、session、副作用；组件层只做必要的 import 与数据字段适配。
+**核心原则**：默认复制当前阶段闭环需要的 oh-my-pi 代码，而不是整包导入；只有在
+原逻辑触碰 oh-my-pi agent loop / provider / tool side effect、Phase B 不做的外设能力，
+或 package import 需要改到 Mustang compat/active-port source 时才改写。
 
-推荐数据流：
+Phase B 按独立计划执行：
 
-```
-MustangSession
-  -> ACP session/update
-  -> MustangAgentSessionAdapter
-  -> oh-my-pi-like AgentSessionEvent / AssistantMessage / AgentTool
-  -> vendored InteractiveMode / controllers / components
-```
+- `B0` port 管理脚手架
+- `B1` TUI 主路径闭包复制与模块化激活
+- `B2` 真实 kernel probe + Phase B 汇总测试
 
-#### B1 — Vendor @oh-my-pi/pi-tui
+`B1` 会一次性复制 interactive TUI 主路径需要的 oh-my-pi runtime + UI 源码闭包，
+再按 Runtime、Assistant、Tool、Editor、Status/Welcome/Commands、ACP Adapter、
+InteractiveMode 模块激活和验收，避免最小 runtime 或碎片化迁移导致大量自写 UI glue。
 
-将 `/home/saki/Documents/alex/oh-my-pi/packages/tui/src/` 整体复制到
-`src/cli/src/tui/`。
-
-需要处理的依赖：
-- `@oh-my-pi/pi-natives` → 提供 `stringWidth` 等，可替换为 `string-width` npm 包
-- `@oh-my-pi/pi-utils` → 只用到 `$flag`、`getDebugLogPath` 等少数函数，手写 shim
-- `marked` → 直接 npm 引入
-
-vendor 后 `import { TUI, Text, Editor } from "@/tui"` 就可以用。
-
-#### B2 — Vendor oh-my-pi UI 层代码
-
-优先复制这些文件 / 目录，随后通过 compat/shim 让它们编译：
-
-| oh-my-pi 源路径 | Mustang 目标路径 | 说明 |
-|---|---|---|
-| `packages/coding-agent/src/modes/theme/` | `src/cli/src/modes/theme/` | 主题、颜色、markdown/editor theme。 |
-| `packages/coding-agent/src/modes/components/` | `src/cli/src/modes/components/` | 尽量完整复制，保留 render 逻辑。 |
-| `packages/coding-agent/src/modes/controllers/input-controller.ts` | `src/cli/src/modes/controllers/input-controller.ts` | 键盘、history、autocomplete、paste、multi-line 行为。 |
-| `packages/coding-agent/src/modes/controllers/command-controller.ts` | `src/cli/src/modes/controllers/command-controller.ts` | 先保留 slash command/autocomplete 相关路径，其余命令可 stub。 |
-| `packages/coding-agent/src/modes/components/custom-editor.ts` | `src/cli/src/modes/components/custom-editor.ts` | oh-my-pi interactive mode 实际使用的 editor wrapper。 |
-| `packages/coding-agent/src/modes/components/history-search.ts` | `src/cli/src/modes/components/history-search.ts` | `Ctrl+R` 历史搜索 UI。 |
-| `packages/coding-agent/src/modes/utils/` | `src/cli/src/modes/utils/` | UI helpers、hotkey markdown、tool markdown 等。 |
-| `packages/coding-agent/src/modes/interactive-mode.ts` | `src/cli/src/modes/interactive.ts` | 复制后做保留式裁剪，而不是从零重写。 |
-
-此批次结束时，允许存在 compile errors；目标是让需要迁移的 UI 源码进入 Mustang
-repo，并把后续工作变成“满足 imports / 替换边界依赖”的机械过程。
-
-#### B3 — Compat / shim 层
-
-新增本地兼容层，优先复刻 oh-my-pi UI 代码实际读取的接口：
-
-```
-src/cli/src/compat/
-├── pi-ai.ts            # AssistantMessage / Message / Model / Usage 等 UI 类型
-├── pi-agent-core.ts    # Agent / AgentMessage / AgentTool / ThinkingLevel 等 UI 类型
-├── pi-natives.ts       # visible width / fuzzy / sanitize / key event helpers
-└── pi-utils.ts         # settings-independent utils: logger, $flag, getProjectDir...
-
-src/cli/src/config/
-├── settings.ts         # settings.get / getGroup 的默认值实现
-└── keybindings.ts      # KeybindingsManager 默认键位
-```
-
-处理规则：
-
-- 先让 TypeScript 编译错误驱动 shim 的接口补齐，不预先重写未使用 API。
-- `@oh-my-pi/pi-tui` imports 改为 `@/tui`。
-- `@oh-my-pi/pi-utils` / `@oh-my-pi/pi-natives` / `@oh-my-pi/pi-ai` /
-  `@oh-my-pi/pi-agent-core` imports 改为 `@/compat/*`。
-- `settings.get(...)` 返回 oh-my-pi UI 期望的默认值；主题和状态栏 layout 先用固定默认配置。
-- 图片 / sixel / kitty / external editor 等高级能力优先降级成 no-op 或文本 fallback，但保持接口。
-
-#### B4 — ACP-backed AgentSession adapter
-
-新增：
-
-```
-src/cli/src/session/agent-session-adapter.ts
-src/cli/src/session/events.ts
-src/cli/src/session/history-storage.ts
-```
-
-`MustangAgentSessionAdapter` 对外模拟 oh-my-pi `AgentSession` 的 UI-facing 子集：
-
-- `sendMessage(input)` / submit → `MustangSession.prompt(...)`
-- `cancel()` → `session.cancel()`
-- permission request → Phase B 继续沿用 Phase A 的 allow-once handler，但不要向 TUI
-  直接写裸 stdout/stderr；Phase C 再接入交互审批 UI
-- event observer → 把 ACP `session/update` 转换成 oh-my-pi-like UI event
-- `agent` / `model` / `tools` / `context` 等字段提供只读快照，满足 status line /
-  tool execution / welcome 组件读取
-
-ACP update 的真实 discriminator 是 `sessionUpdate`（camelCase），不是 `type`。
-adapter 负责集中处理 wire shape：
-
-| ACP update | UI adapter 输出 |
-|---|---|
-| `agent_message_chunk` | 追加到当前 assistant text block。 |
-| `agent_thought_chunk` | 追加到当前 thinking block，继续走原 thinking 折叠组件。 |
-| `tool_call` | 生成 tool start event，创建原 `ToolExecutionComponent`。 |
-| `tool_call_update` + `in_progress` | 更新对应 `ToolExecutionHandle`，标记 partial。 |
-| `tool_call_update` + `completed` | 更新结果，标记 complete。 |
-| `tool_call_update` + `failed` | 更新错误结果，走原错误渲染路径。 |
-| `tool_call_update` + `content[type=diff]` | 转成原 diff 渲染可消费的 result/details。 |
-| `current_mode_update` | 更新 plan/default mode state 和 status line。 |
-| `session_info_update` | 更新 session title / terminal title。 |
-| `available_commands_update` | 更新 slash command autocomplete provider。 |
-| `plan` | 更新 todo/plan panel；若原组件不匹配，先用兼容 event 保留展示位置。 |
-
-#### B5 — InteractiveMode 保留式裁剪
-
-从 oh-my-pi `modes/interactive-mode.ts` 复制到 `src/cli/src/modes/interactive.ts`，
-随后只裁剪 Mustang Phase B 不需要的业务分支，保留 TUI 结构和输入行为。
-
-保留：
-
-- `TUI` / `Container` / `chatContainer` / `statusContainer` / `editorContainer`
-- `CustomEditor`
-- `InputController`
-- `CommandController` 的 slash command/autocomplete 路径
-- `StatusLineComponent`
-- `WelcomeComponent`
-- `pendingTools`
-- `streamingComponent` / `streamingMessage`
-- thinking hide/show
-- history search
-- keyboard shortcuts
-
-裁剪或 stub：
-
-- LSP startup UI
-- STT
-- extension dashboard/widgets
-- OAuth manual input
-- MCP / SSH command controllers
-- btw panel
-- provider migration warnings
-- local agent loop / model resolver / compaction execution
-
-关键约束：
-
-- 不把 `interactive.ts` 改写成全新的简化实现。
-- 优先保留原方法名、状态字段和 controller 调用顺序。
-- 因 Mustang CLI 是 thin client，所有 agent loop / tool execution side effect 都只在
-  kernel 发生；CLI 只消费 adapter 事件。
-
-#### B6 — 组件迁移优先级
-
-组件尽量完整复制后适配 imports。确实无法一次性保留的能力，按 fallback 处理，
-不要重写主体渲染。
-
-| 组件 | 迁移策略 | Phase B 最低要求 |
-|------|----------|------------------|
-| `AssistantMessageComponent` | 保留原 markdown + thinking render；用 compat `AssistantMessage` 类型喂数据。 | 流式 text、thinking 折叠、error/aborted 状态。 |
-| `ToolExecutionComponent` | 完整复制；shim `AgentTool`、json-tree、render-utils、diff、image fallback。 | 工具名、pending/progress/completed/failed、text result、diff result。 |
-| `StatusLineComponent` | 复制原组件；shim settings/git/model/session 字段。 | mode、session title、model/provider、busy/subagent count 可展示。 |
-| `WelcomeComponent` | 保留 layout，替换 copy/data provider。 | Mustang 名称、kernel version、session ID、cwd、model。 |
-| `CustomEditor` + `InputController` | 保留原输入控制逻辑。 | slash autocomplete、history、multi-line、paste、arrow history。 |
-| `HistorySearch` | 保留原 overlay。 | `Ctrl+R` 可从 adapter/history-storage 查询本地输入历史。 |
-
-#### B7 — 键盘快捷键
-
-保留 oh-my-pi `modes/controllers/input-controller.ts` 中的实现路径：
-
-| 快捷键 | 动作 |
-|--------|------|
-| `Ctrl+C`（单次）| 取消进行中的 prompt（`session.cancel()`） |
-| `Ctrl+C`（两次）| 退出 CLI |
-| `Ctrl+L` | 清屏（重新渲染 TUI） |
-| `Ctrl+R` | 历史搜索（Phase B 先用本地输入历史；session replay 并入 Phase D） |
-| `↑` / `↓` | 输入历史 |
-| `Shift+Enter` | 插入换行（多行输入） |
-
-#### B8 — Phase B 测试 / probe
-
-Phase B 要覆盖两类风险：vendored UI 是否仍能渲染、ACP adapter 是否把真实 kernel
-事件送进原 UI 路径。
-
-新增或扩展 `src/cli/tests/`：
-
-| 测试 | 目的 |
-|---|---|
-| `test_tui_import.ts` | `TUI` / `Text` / `Editor` / `Markdown` 能 import 并实例化。 |
-| `test_component_render.ts` | 直接喂 copied `AssistantMessageComponent` / `ToolExecutionComponent` 状态，断言 render lines 包含关键文本。 |
-| `test_acp_adapter.ts` | 喂 fake ACP updates，断言 adapter 输出 oh-my-pi-like event/state。 |
-| `test_interactive_smoke.ts` | 对真实 kernel 发 prompt，确认 adapter → InteractiveMode → assistant component 路径被触发。 |
-| `test_tool_stream_smoke.ts` | 对真实 kernel 触发工具调用，确认 `ToolExecutionComponent` 收到 start/update/complete 或 failed。 |
-
-继续保留 Phase A seam tests：
-
-```bash
-bun run tests/run_all.ts
-```
-
-Phase B 新 closure seams：
-
-- `CustomEditor/InputController submit -> MustangAgentSessionAdapter.sendMessage -> MustangSession.prompt`
-- `AcpClient.onUpdate -> MustangAgentSessionAdapter -> copied InteractiveMode/EventController -> copied components`
-- `available_commands_update -> CommandController/autocomplete provider`
-
-每个 seam 都需要真实 kernel probe 或可重复的 e2e test 输出。
-
-**Phase B DoD**：
-
-- `import { TUI, Text, Editor, Markdown } from "@/tui"` 可用。
-- copied `InteractiveMode` 启动并接管 stdin/stdout。
-- 工具调用、流式文本、thinking 折叠、status line 全部渲染正确。
-- slash autocomplete 来自 `available_commands_update`。
-- `Ctrl+C` cancel、双击退出、`Ctrl+L`、`Ctrl+R`、输入历史、`Shift+Enter`
-  行为可用。
-- Phase A tests + Phase B component/adapter/probe tests 全部 PASS。
+**Phase B DoD**：见
+[`cli-phase-b-tui-migration.md#完成标准`](cli-phase-b-tui-migration.md#完成标准)。
 
 ---
 
-### Phase C — 工具授权交互（P1）
+### Phase C — 工具授权交互（P1） — implemented 2026-04-27
 
-**目标**：处理 `session/request_permission` kernel 请求，弹出 approve/deny UI。
+详细执行方案已拆分到
+[`docs/plans/cli-phase-c-permissions.md`](cli-phase-c-permissions.md)。
 
-#### C1 — PermissionDialog 组件
+**目标**：处理 `session/request_permission` kernel request，用 oh-my-pi
+现有 selector/input overlay 体系展示工具授权、结构化问题和取消流程，并把选择作为
+JSON-RPC response 回给 kernel。
 
-参照 oh-my-pi 的工具审批 UI 风格（`tool-execution.ts` 中的审批按钮）：
+**核心原则**：继续 Phase B 的 active-port 策略，尽量原封不动复制 oh-my-pi UI /
+controller 源码；Mustang 自写代码只放在 ACP 边界和状态转换层。
 
-```
-┌─ Tool Authorization ─────────────────────┐
-│  Tool: Bash                              │
-│  Command: rm -rf /tmp/foo                │
-│                                          │
-│  [A] Allow once  [S] Allow session       │
-│  [D] Deny        [Q] Deny always         │
-└──────────────────────────────────────────┘
-```
+Phase C 已按独立计划实现：
 
-#### C2 — ACP 响应
+- `C0` upstream surface inventory
+- `C1` permission data model and mapper
+- `C2` activate oh-my-pi overlay controller
+- `C3` tool permission UI
+- `C4` structured question path
+- `C5` ACP client plumbing
+- `C6` tests
 
-`session/request_permission` 是 kernel 发起的 request，CLI 需要回 response：
-
-```typescript
-client.on('session/request_permission', async (id, req) => {
-  const result = await permissionDialog.prompt(req)
-  client.respond(id, result)  // JSON-RPC response，带 id
-})
-```
-
-**Phase C DoD**：需要授权的工具（Bash、文件写入等）能正常弹出审批，
-approve 后工具继续执行，deny 后工具返回拒绝信息。
+**Phase C DoD**：见
+[`cli-phase-c-permissions.md#完成标准`](cli-phase-c-permissions.md#完成标准)。
 
 ---
 
@@ -573,25 +373,32 @@ src/cli/
 ├── tsconfig.json
 ├── bin/
 │   └── mustang              # 入口脚本（#!/usr/bin/env bun）
+├── active-port-manifest.json
+├── scripts/
+│   ├── check_active_port.ts
+│   └── copy_oh_my_pi_file.ts
 └── src/
     ├── main.ts
     ├── acp/
     │   └── client.ts        # WebSocket JSON-RPC client
     ├── session.ts           # session 操作封装
     ├── compat/              # oh-my-pi UI-facing shims
-    ├── config/              # settings/keybindings defaults for vendored UI
-    ├── tui/                 # vendored from @oh-my-pi/pi-tui
-    │   ├── tui.ts
-    │   ├── terminal.ts
-    │   ├── components/
-    │   └── …
-    ├── modes/
-    │   ├── interactive.ts   # vendored + trimmed oh-my-pi interactive mode
-    │   ├── components/      # vendored oh-my-pi mode components
-    │   ├── controllers/     # vendored input/command controllers
-    │   ├── theme/
-    │   ├── utils/
-    │   └── print.ts         # 非交互模式
+    ├── tui/
+    │   └── index.ts         # thin facade / re-export to active-port/tui
+    ├── active-port/
+    │   ├── tui/             # mirrors packages/tui/src/**
+    │   │   ├── tui.ts
+    │   │   ├── terminal.ts
+    │   │   └── components/
+    │   └── coding-agent/    # mirrors packages/coding-agent/src/**
+    │       ├── config/
+    │       ├── modes/
+    │       │   ├── interactive-mode.ts
+    │       │   ├── components/
+    │       │   ├── controllers/
+    │       │   ├── theme/
+    │       │   └── utils/
+    │       └── tools/
     └── session/
         ├── agent-session-adapter.ts
         ├── events.ts
@@ -602,13 +409,20 @@ src/cli/
 
 ## 已知风险
 
-| 风险 | 影响 | 缓解 |
-|------|------|------|
-| `@oh-my-pi/pi-tui` 内部依赖 `@oh-my-pi/pi-natives`（Rust binding） | vendor 时可能缺失 native 能力 | 检查哪些 API 用了 native；缺失的用纯 JS 替代（如 `string-width`） |
-| `session/prompt` 并发：kernel 推 `session/update` 同时可能发 `session/request_permission` | 需要真正的并发收发 | ACP client 实现时用独立的 recv loop + event emitter，不要 await 阻塞 |
-| oh-my-pi `interactive-mode.ts` 依赖面很宽 | shim 数量可能膨胀，Phase B 周期变长 | 保留式裁剪：先满足 UI 主路径 imports，LSP/STT/extensions/OAuth/MCP/SSH 等边缘功能 stub 掉 |
-| compat 类型和真实 oh-my-pi 类型漂移 | 编译通过但运行期组件读取缺字段 | 增加 component render tests，喂真实 adapter state，覆盖 assistant/tool/status/welcome 主路径 |
-| ACP update 与 oh-my-pi event 语义不一一对应 | 流式 tool/result/thinking 顺序可能错乱 | adapter 集中做转换，新增 fake update 单测 + 真实 kernel smoke/probe |
+CLI Phase B 的风险不能只靠“缓解”。所有 Phase B 风险必须按
+[`cli-phase-b-tui-migration.md#风险根治方案`](cli-phase-b-tui-migration.md#风险根治方案)
+里的根治方案关闭：
+
+- 禁止 active port 直接 import `@oh-my-pi/pi-natives`，由 Mustang compat 完整承接。
+- `AcpClient` 必须是常驻 JSON-RPC protocol pump，permission request 不能被 prompt
+  await 阻塞。
+- `active-port/coding-agent/modes/interactive-mode.ts` 修改前必须完成 required-surface inventory，并用 facade/stub 截断
+  Phase B 不做的外设能力。
+- Component state 必须由 adapter/state builder 统一构造，不能散落 object literal。
+- ACP update 到 oh-my-pi-like event 的转换只能发生在 `MustangAgentSessionAdapter`。
+- 不在 repo 内保存完整 oh-my-pi mirror；active port 只放登记过的当前阶段闭包。
+- TUI 测试默认使用 `TestTerminal`；真实终端验证只能走带超时和 teardown 的
+  pseudo-TTY probe。
 
 ---
 

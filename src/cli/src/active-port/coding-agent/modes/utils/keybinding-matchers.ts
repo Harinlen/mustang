@@ -1,4 +1,4 @@
-// -nocheck
+// @ts-nocheck
 import { getKeybindings, matchesKey } from "@oh-my-pi/pi-tui";
 
 /**

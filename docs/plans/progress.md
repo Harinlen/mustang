@@ -71,6 +71,11 @@ Update after every implementation task.  Route gotchas to
 | Session module file-length refactor | Batch A implemented for `src/kernel/kernel/session/`: `SessionManager` moved from monolithic `session/__init__.py` into a thin facade with internals grouped by functional path (`api/`, `lifecycle/`, `turns/`, `client_stream/`, `orchestration/`, `persistence/`, `runtime/`). Runtime state, flags, helpers, event schema, and spillover helpers split out while preserving `from kernel.session import SessionManager`, `kernel.session.events`, and `kernel.session.store` import paths. Follow-up simplification consolidated session creation, prompt enqueue, runtime close, config-list projection, optional-subsystem lookup, tool update emission, and replay restoration helpers. All session files are now under 300 lines. Verified with 55 session tests, 39 protocol/gateway/lifespan tests, and 5 selected Session E2E tests. | design: `docs/plans/session-module-refactor-plan.md` |
 | Workflow readable-code guide | Added standalone `docs/workflow/readable-code.md`, adapted from the readable-code article and clean-code supplement, covering naming, formatting, comments, control flow, expressions, variables, extraction, single-job functions, plain-language design, deletion, readable tests, and consistency. `docs/workflow/code-quality.md` now links to it instead of carrying the full checklist inline. | sources: heyitao reading notes + baymaxium gist |
 | Session module readability pass | Applied `docs/workflow/readable-code.md` to `src/kernel/kernel/session/`: named connection binding, list pagination, title seeding, token update, replay-state reconstruction, tool-result persistence, and plan-mode transition concepts; reduced vague locals and silent exception swallowing while preserving public `SessionManager` API and session package import paths. Closure seam touched: existing `SessionOrchestratorFactoryMixin._set_mode` closure; verified through real ACP plan-mode E2E. | Verified: `ruff format/check src/kernel/kernel/session`; 77 session/protocol/routes tests; `test_kernel_e2e.py`; `test_session_resume_e2e.py`; `test_plan_mode_e2e.py`; session comment density 22.79% |
+| CLI Phase B0 active-port scaffold | Added `src/cli/active-port-manifest.json`, `scripts/check_active_port.ts`, and `scripts/copy_oh_my_pi_file.ts` to enforce the on-demand oh-my-pi TUI port boundary before any UI files are copied. `tsconfig.json` already had the required `src/**/*` + `tests/**/*` include boundary, and the checker now guards that invariant plus bulk-vendor denylist paths. | plan: `docs/plans/cli-phase-b-tui-migration.md` B0 |
+| Memory LLM stream contract fix | Fixed Memory selector/background LLM calls after `LLMManager.stream()` gained required `system`, `tool_schemas`, and `temperature` keyword-only args and changed to an awaitable generator factory. Added shared `memory.llm_text.collect_llm_text()` so both memory scoring and background extraction use the current typed stream contract. | Verified: `uv run pytest tests/kernel/memory -q` (86 passed); `uv run ruff check src/kernel/kernel/memory tests/kernel/memory/test_llm_text.py` |
+| Permission dynamic ACP options | `ToolExecutor` now projects `PermissionAsk.suggestions` into `PermissionRequest.options`; `SessionPermissionMixin` maps those dynamic options into ACP `session/request_permission.options`, preserving the legacy 3-button default only for callers that do not provide options. Destructive asks can now hide `allow_always` end-to-end through the session permission seam. | plan: `docs/plans/cli-phase-c-permissions.md` C0.5; verified with targeted kernel tests |
+| AskUserQuestion text questions | Extended `AskUserQuestionTool` with `type: "text"` questions for free-form user input over the existing Mustang permission-channel extension. Choice questions remain backward-compatible (`type` omitted = `choice`, options required); text questions do not require options and may carry `placeholder`, `multiline`, and `maxLength`. Tool prompt, validation, unit tests, ToolExecutor updated_input forwarding, and ACP e2e text path updated. | plan: `docs/plans/cli-phase-c-permissions.md` C4b |
+| CLI Phase C permission UI | Implemented CLI-side `session/request_permission` handling: permission mapper/model/queue, fail-closed ACP default, `PermissionController` over oh-my-pi `HookSelectorComponent` / `HookInputComponent` / `HookEditorComponent`, `InteractiveMode` handler wiring, ordinary tool authorization overlay, AskUserQuestion choice/text updatedInput path, Ctrl+C overlay cancellation priority, and Phase C local test runner. Production `main.ts` no longer installs an implicit auto-allow handler. | plan: `docs/plans/cli-phase-c-permissions.md`; verified with CLI typecheck, active-port check, Phase A + Phase C CLI tests, targeted kernel tests, AskUserQuestion e2e |
 
 ## Summaries
 
@@ -309,3 +314,39 @@ architectures).
 
 ### New dependency
 - jieba==0.42.1 (pure Python CJK tokenizer)
+
+---
+
+## CLI Phase B — TUI Active Port
+
+**Date**: 2026-04-27
+**Plan**: [cli-phase-b-tui-migration.md](cli-phase-b-tui-migration.md)
+
+Implemented the first usable Phase B TUI path for `src/run-cli.sh`.
+
+### Delivered
+- Active-ported oh-my-pi `packages/tui/src/**` and the needed coding-agent TUI
+  surface into `src/cli/src/active-port/**` with a manifest checker.
+- Preserved oh-my-pi directory shape for the copied TUI and coding-agent TUI
+  component paths under `src/cli/src/active-port/`.
+- Added local compat facades for `@oh-my-pi/pi-tui`, `pi-utils`, `pi-natives`,
+  `pi-ai`, and `pi-agent-core`.
+- Replaced the Phase A readline entry with a TUI `InteractiveMode`.
+- `src/run-cli.sh` now starts the TUI, renders the oh-my-pi style welcome,
+  editor, status line, assistant markdown/thinking, and tool execution component
+  path.
+- ACP `agent_message_chunk`, `agent_thought_chunk`, `tool_call`,
+  `tool_call_update`, `current_mode_update`, `session_info_update`, and
+  `available_commands_update` are mapped into TUI state.
+- Slash autocomplete is seeded with built-in commands at startup and refreshed
+  from `available_commands_update`; `/help` is handled locally instead of being
+  sent to the agent as a skill prompt.
+
+### Verification
+- `bunx tsc -p src/cli/tsconfig.json --noEmit`
+- `bun run src/cli/scripts/check_active_port.ts`
+- `bun tests/run_all.ts` from `src/cli`: 4 passed, 0 failed
+- PTY probe: `src/run-cli.sh`, submit `say hi`, assistant text streamed into
+  the TUI and status returned from `running` to `ready`.
+- PTY probe: type `/`; autocomplete menu opens with `/help`, `/model`,
+  `/plan`, etc. Pressing Enter on `/help` renders local command help.

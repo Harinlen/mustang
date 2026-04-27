@@ -253,6 +253,12 @@
       "notes": "coding-agent interactive tui mirror"
     },
     {
+      "upstream": "packages/coding-agent/src/modes/components/countdown-timer.ts",
+      "target": "src/cli/src/active-port/coding-agent/modes/components/countdown-timer.ts",
+      "phase": "B1",
+      "notes": "hook input runtime dependency"
+    },
+    {
       "upstream": "packages/coding-agent/src/modes/components/custom-editor.ts",
       "target": "src/cli/src/active-port/coding-agent/modes/components/custom-editor.ts",
       "phase": "B1",

@@ -16,6 +16,7 @@ import { StatusLineComponent } from "@/active-port/coding-agent/modes/components
 import { ToolExecutionComponent } from "@/active-port/coding-agent/modes/components/tool-execution.js";
 import { WelcomeComponent } from "@/active-port/coding-agent/modes/components/welcome.js";
 import { getEditorTheme, initTheme, theme } from "@/active-port/coding-agent/modes/theme/theme.js";
+import { PermissionController } from "@/permissions/controller.js";
 
 type ContentBlock = { type?: string; text?: string; data?: string; mimeType?: string };
 
@@ -23,6 +24,20 @@ type ToolHandle = {
   component: ToolExecutionComponent;
   title: string;
 };
+
+const BUILTIN_COMMANDS: AutocompleteItem[] = [
+  { value: "help", label: "/help", description: "Show available commands" },
+  { value: "model", label: "/model", description: "Show or switch model" },
+  { value: "plan", label: "/plan", description: "Enter, exit, or inspect plan mode" },
+  { value: "compact", label: "/compact", description: "Compact conversation context" },
+  { value: "session", label: "/session", description: "List, resume, or delete sessions" },
+  { value: "cost", label: "/cost", description: "Show usage and cost" },
+  { value: "memory", label: "/memory", description: "List, show, or delete memories" },
+  { value: "cron", label: "/cron", description: "Manage scheduled tasks" },
+  { value: "auth", label: "/auth", description: "Manage secrets and auth values" },
+  { value: "quit", label: "/quit", description: "Exit Mustang CLI" },
+  { value: "exit", label: "/exit", description: "Exit Mustang CLI" },
+];
 
 class MemoryHistory {
   #items: Array<{ prompt: string }> = [];
@@ -44,10 +59,11 @@ export class InteractiveMode {
   private readonly root = new Container();
   private readonly chat = new Container();
   private readonly statusLine: StatusLineComponent;
+  private readonly permissionController: PermissionController;
   private editor!: Editor;
   private readonly history = new MemoryHistory();
   private readonly toolExecutions = new Map<string, ToolHandle>();
-  private commands: AutocompleteItem[] = [];
+  private commands: AutocompleteItem[] = [...BUILTIN_COMMANDS];
   private currentMessage: AssistantMessageComponent | null = null;
   private currentText = "";
   private currentThinking = "";
@@ -65,12 +81,17 @@ export class InteractiveMode {
       title: session.sessionId,
       agent: { model: { id: options.model ?? "" } },
     });
+    this.permissionController = new PermissionController(this.tui, (message) => {
+      this.chat.addChild(new Text(theme.fg("error", message), 1, 0));
+      this.tui.requestRender();
+    });
   }
 
   async run(): Promise<void> {
     await initTheme(false);
     this.installLayout();
     this.installInputHandlers();
+    this.client.setPermissionHandler((_id, req) => this.permissionController.handleRequest(req));
     this.tui.start();
 
     await new Promise<void>((resolve) => {
@@ -109,6 +130,7 @@ export class InteractiveMode {
   private installInputHandlers(): void {
     this.tui.addInputListener((data) => {
       if (matchesKey(data, "ctrl+c")) {
+        if (this.tui.hasOverlay()) return undefined;
         const now = Date.now();
         if (this.busy) {
           this.session.cancel();
@@ -143,6 +165,8 @@ export class InteractiveMode {
   private async submit(text: string): Promise<void> {
     const prompt = text.trim();
     if (!prompt || this.busy) return;
+
+    if (this.handleLocalSlashCommand(prompt)) return;
 
     this.editor.addToHistory(prompt);
     this.chat.addChild(new Text(theme.fg("accent", `> ${prompt}`), 1, 0));
@@ -258,16 +282,65 @@ export class InteractiveMode {
 
   private updateCommands(raw: unknown): void {
     if (!Array.isArray(raw)) return;
-    this.commands = raw.map((entry) => {
+    const remoteCommands = raw.map((entry) => {
       const command = entry as Record<string, unknown>;
-      const name = String(command.name ?? command.command ?? "");
+      const rawName = String(command.name ?? command.command ?? "");
+      const name = rawName.startsWith("/") ? rawName.slice(1) : rawName;
       return {
-        value: name.startsWith("/") ? name : `/${name}`,
-        label: name.startsWith("/") ? name : `/${name}`,
+        value: name,
+        label: `/${name}`,
         description: command.description ? String(command.description) : undefined,
       };
-    }).filter((item) => item.value !== "/");
+    }).filter((item) => item.value !== "");
+    const merged = new Map<string, AutocompleteItem>();
+    for (const item of BUILTIN_COMMANDS) merged.set(item.value, item);
+    for (const item of remoteCommands) merged.set(item.value, item);
+    this.commands = [...merged.values()];
     this.editor.setAutocompleteProvider(new CombinedAutocompleteProvider(this.commands));
+  }
+
+  private handleLocalSlashCommand(prompt: string): boolean {
+    const [command, ...args] = prompt.slice(1).split(/\s+/);
+    if (!prompt.startsWith("/") || !command) return false;
+
+    switch (command) {
+      case "help":
+        this.editor.addToHistory(prompt);
+        this.chat.addChild(new Text(this.renderHelp(), 1, 0));
+        this.tui.requestRender();
+        return true;
+      case "quit":
+      case "exit":
+        this.shutdown();
+        return true;
+      case "plan": {
+        const subcommand = args[0];
+        if (subcommand === "enter") {
+          void this.session.setMode("plan");
+          this.statusLine.setMode("plan");
+          this.chat.addChild(new Text(theme.fg("success", "Entered plan mode"), 1, 0));
+        } else if (subcommand === "exit") {
+          void this.session.setMode("default");
+          this.statusLine.setMode("ready");
+          this.chat.addChild(new Text(theme.fg("success", "Exited plan mode"), 1, 0));
+        } else {
+          this.chat.addChild(new Text(theme.fg("dim", "Usage: /plan enter | /plan exit"), 1, 0));
+        }
+        this.editor.addToHistory(prompt);
+        this.tui.requestRender();
+        return true;
+      }
+      default:
+        return false;
+    }
+  }
+
+  private renderHelp(): string {
+    const lines = ["Available commands", ""];
+    for (const command of this.commands) {
+      lines.push(`${command.label.padEnd(12)}${command.description ?? ""}`);
+    }
+    return lines.join("\n");
   }
 
   private setBusy(busy: boolean): void {

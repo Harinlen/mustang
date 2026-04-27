@@ -38,8 +38,8 @@ export interface PermissionRequest {
 
 export interface PermissionResult {
   outcome: {
-    outcome: "selected";
-    optionId: string;
+    outcome: "selected" | "cancelled";
+    optionId?: string;
     updatedInput?: Record<string, unknown>;
   };
 }
@@ -189,16 +189,10 @@ export class AcpClient {
       try {
         result = await this.permissionHandler(id, req);
       } catch {
-        // On error, deny
-        result = {
-          outcome: { outcome: "selected", optionId: "deny" },
-        };
+        result = failClosedPermissionResult(req);
       }
     } else {
-      // Default: allow once
-      result = {
-        outcome: { outcome: "selected", optionId: "allow_once" },
-      };
+      result = failClosedPermissionResult(req);
     }
 
     this.respond(id, result);
@@ -298,6 +292,16 @@ export class AcpClient {
   setPermissionHandler(handler: PermissionHandler): void {
     this.permissionHandler = handler;
   }
+}
+
+export function failClosedPermissionResult(req: Pick<PermissionRequest, "options">): PermissionResult {
+  const reject = req.options.find((option) => option.kind.startsWith("reject"))
+    ?? req.options.find((option) => option.optionId.startsWith("reject"))
+    ?? req.options.find((option) => option.optionId === "deny");
+  if (reject) {
+    return { outcome: { outcome: "selected", optionId: reject.optionId } };
+  }
+  return { outcome: { outcome: "cancelled" } };
 }
 
 // ---------------------------------------------------------------------------

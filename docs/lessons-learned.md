@@ -69,6 +69,11 @@ wall twice.
 
 ## Implementation Discipline
 
+- **Root `.gitignore` `scripts/` matches nested script directories**:
+  the pattern ignores `src/cli/scripts/` as well as the repo-root
+  scratch directory.  Formal, version-controlled script directories
+  need explicit unignore rules such as `!src/cli/scripts/**`.
+
 - **Never silently skip plan items**: if the plan lists 12 test files,
   all 12 must be written.  During SkillManager implementation, 5 of 12
   planned test files were skipped without explanation — including
@@ -114,6 +119,14 @@ wall twice.
   or `tests/e2e/test_<name>_e2e.py` that runs it against the real
   thing.  "Unit tests pass" is necessary but never sufficient.
 
+- **When `LLMManager.stream()` changes, grep all subsystem callers, not
+  just orchestrator-adjacent closures.**  Memory selector/background
+  kept the old `stream(model, messages, max_tokens)` shape after the
+  LLM interface required `system`, `tool_schemas`, and `temperature`
+  keyword-only args plus awaiting the returned generator factory.
+  Fix shared helpers at subsystem boundaries so sibling paths cannot
+  drift independently.
+
 ---
 
 ## Kernel Design-debt Backlog
@@ -126,4 +139,3 @@ wall twice.
 - **web_fetch anti-bot fallback**: some modern sites require browser
   execution.  HTTP fetch is primary; add optional headless-browser
   fallback (Playwright) for timeout/empty-content failures.
-

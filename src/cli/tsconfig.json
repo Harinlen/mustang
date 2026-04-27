@@ -6,8 +6,6 @@
     "strict": true,
     "noImplicitAny": false,
     "strictNullChecks": false,
-    "baseUrl": ".",
-    "ignoreDeprecations": "6.0",
     "types": ["bun"],
     "paths": {
       "@/*": ["./src/*"],

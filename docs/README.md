@@ -104,6 +104,8 @@ Protocol 层：两套 stack 都已在 `kernel.routes.stack.create_stack`
 | **Full-repo audit** | `workflow/code-review.md` | When user says "Code Review" |
 | **Future phases** | `plans/roadmap.md` | Planning what's next |
 | **CLI client plan** | [`plans/cli-plan.md`](plans/cli-plan.md) | Implementing the CLI client |
+| **CLI Phase B TUI migration** | [`plans/cli-phase-b-tui-migration.md`](plans/cli-phase-b-tui-migration.md) | On-demand active-port plan for oh-my-pi TUI runtime/components/controllers |
+| **CLI Phase C permissions** | [`plans/cli-phase-c-permissions.md`](plans/cli-phase-c-permissions.md) | Permission UI migration plan for `session/request_permission` |
 | **Backlog** | `plans/backlog.md` | Deferred features from design docs |
 | **Completed work** | `plans/progress.md` | Confirming what's done (kernel era) |
 

@@ -30,14 +30,6 @@ function parseArgs(): { port: number; sessionId: string | null } {
   return { port, sessionId };
 }
 
-function setupPermissions(client: AcpClient): void {
-  client.setPermissionHandler(async (_id, req) => {
-    const options = req.options.map((option) => option.optionId);
-    const allow = options.includes("allow_once") ? "allow_once" : options[0] ?? "deny";
-    return { outcome: { outcome: "selected", optionId: allow } };
-  });
-}
-
 async function main(): Promise<void> {
   const { port, sessionId: loadId } = parseArgs();
   const kernelUrl = process.env.KERNEL_URL ?? `ws://localhost:${port}`;
@@ -61,8 +53,6 @@ async function main(): Promise<void> {
     }
     process.exit(1);
   }
-
-  setupPermissions(client);
 
   const session = loadId
     ? await MustangSession.load(client, loadId)
