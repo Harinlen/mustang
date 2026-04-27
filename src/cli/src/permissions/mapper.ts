@@ -75,7 +75,7 @@ function mapQuestionPrompt(req: PermissionRequest, rawQuestions: RawQuestion[]):
 
 function mapQuestion(raw: RawQuestion): StructuredQuestion {
   const kind = raw.type === "text" ? "text" : "choice";
-  const options = Array.isArray(raw.options) ? raw.options.map(String) : [];
+  const options = Array.isArray(raw.options) ? raw.options.map(formatQuestionOption) : [];
   return {
     kind,
     header: String(raw.header ?? "Question"),
@@ -86,6 +86,15 @@ function mapQuestion(raw: RawQuestion): StructuredQuestion {
     maxLength: typeof raw.maxLength === "number" && Number.isFinite(raw.maxLength) ? raw.maxLength : undefined,
     multiple: raw.multiple === true || raw.multiselect === true,
   };
+}
+
+function formatQuestionOption(raw: unknown): string {
+  if (raw !== null && typeof raw === "object" && !Array.isArray(raw)) {
+    const option = raw as Record<string, unknown>;
+    const label = option.label ?? option.name ?? option.value ?? option.id;
+    if (label !== undefined) return String(label);
+  }
+  return String(raw);
 }
 
 function extractQuestions(toolInput: Record<string, unknown> | undefined): RawQuestion[] {

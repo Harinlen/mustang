@@ -64,10 +64,12 @@ export class InteractiveMode {
   private readonly history = new MemoryHistory();
   private readonly toolExecutions = new Map<string, ToolHandle>();
   private commands: AutocompleteItem[] = [...BUILTIN_COMMANDS];
+  private toolOutputExpanded = false;
   private currentMessage: AssistantMessageComponent | null = null;
   private currentText = "";
   private currentThinking = "";
   private busy = false;
+  private cancelling = false;
   private lastCtrlC = 0;
   private resolveDone?: () => void;
 
@@ -133,9 +135,11 @@ export class InteractiveMode {
         if (this.tui.hasOverlay()) return undefined;
         const now = Date.now();
         if (this.busy) {
+          if (this.cancelling) return { consume: true };
+          this.cancelling = true;
           this.session.cancel();
-          this.setBusy(false);
-          this.chat.addChild(new Text(theme.fg("warning", "[cancelled]"), 1, 0));
+          this.statusLine.setMode("cancelling");
+          this.chat.addChild(new Text(theme.fg("warning", "[cancelling]"), 1, 0));
           this.tui.requestRender();
           return { consume: true };
         }
@@ -152,6 +156,11 @@ export class InteractiveMode {
       if (matchesKey(data, "ctrl+l")) {
         this.tui.invalidate();
         this.tui.requestRender(true);
+        return { consume: true };
+      }
+
+      if (isCtrlO(data)) {
+        this.toggleToolOutputExpansion();
         return { consume: true };
       }
 
@@ -182,6 +191,7 @@ export class InteractiveMode {
     } catch (error) {
       this.chat.addChild(new Text(theme.fg("error", `Error: ${(error as Error).message}`), 1, 0));
     } finally {
+      this.cancelling = false;
       this.setBusy(false);
       this.currentMessage = null;
       this.currentText = "";
@@ -259,6 +269,7 @@ export class InteractiveMode {
       process.cwd(),
       id,
     );
+    component.setExpanded(this.toolOutputExpanded);
     this.toolExecutions.set(id, { component, title });
     this.chat.addChild(component);
   }
@@ -349,6 +360,14 @@ export class InteractiveMode {
     this.statusLine.setMode(busy ? "running" : "ready");
   }
 
+  private toggleToolOutputExpansion(): void {
+    this.toolOutputExpanded = !this.toolOutputExpanded;
+    for (const handle of this.toolExecutions.values()) {
+      handle.component.setExpanded(this.toolOutputExpanded);
+    }
+    this.tui.requestRender();
+  }
+
   private shutdown(): void {
     this.client.close();
     this.tui.stop();
@@ -389,4 +408,8 @@ function parseJsonObject(value: string): Record<string, unknown> | null {
   } catch {
     return null;
   }
+}
+
+function isCtrlO(data: string): boolean {
+  return data === "\x0f" || matchesKey(data, "ctrl+o");
 }
