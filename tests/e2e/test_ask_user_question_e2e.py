@@ -11,6 +11,8 @@ test_ask_user_question_happy_path  → Full round-trip: LLM calls AskUserQuestio
                                       LLM receives formatted answers.
 test_ask_user_question_reject      → Client rejects the permission request,
                                       LLM receives denial message.
+test_ask_user_question_text_path   → LLM calls a text question, client returns
+                                      a free-form answer via updated_input.
 """
 
 from __future__ import annotations
@@ -187,3 +189,61 @@ def test_ask_user_question_reject(kernel: tuple[int, str]) -> None:
     assert "REJECTED" in text.upper() or "reject" in text.lower() or "denied" in text.lower(), (
         f"Expected rejection acknowledgement in response. Got: {text[:500]}"
     )
+
+
+# ---------------------------------------------------------------------------
+# 3. Text path: client returns a free-form answer through updated_input
+# ---------------------------------------------------------------------------
+
+
+def test_ask_user_question_text_path(kernel: tuple[int, str]) -> None:
+    """Text questions do not need options and still use updated_input answers."""
+    port, token = kernel
+    _skip_if_no_llm(port, token)
+
+    async def _run_prompt() -> tuple[str, str, bool]:
+        text_parts: list[str] = []
+        stop_reason = "unknown"
+        saw_text_question = False
+        async with _client(port, token, request_timeout=_LLM_TIMEOUT) as client:
+            await client.initialize()
+            sid = await client.new_session()
+
+            prompt = (
+                'First, use ToolSearch with query "select:AskUserQuestion" to load the tool. '
+                "Then call AskUserQuestion with exactly one text question, not a choice question: "
+                '{"type": "text", "question": "What should the project name be?", '
+                '"header": "Name", "placeholder": "Project name", "maxLength": 80}. '
+                "Do not include options for this question. "
+                "After getting the answer, repeat the project name verbatim."
+            )
+            async for event in client.prompt(sid, prompt):
+                if isinstance(event, AgentChunk):
+                    text_parts.append(event.text)
+                elif isinstance(event, PermissionRequest):
+                    if event.tool_input is not None and "questions" in event.tool_input:
+                        questions = event.tool_input["questions"]
+                        saw_text_question = any(
+                            isinstance(q, dict) and q.get("type") == "text" for q in questions
+                        )
+                        await client.reply_permission(
+                            event.req_id,
+                            "allow_once",
+                            updated_input={
+                                "questions": questions,
+                                "answers": {
+                                    "What should the project name be?": "Mustang Studio",
+                                },
+                            },
+                        )
+                    else:
+                        await client.reply_permission(event.req_id, "allow_once")
+                elif isinstance(event, TurnComplete):
+                    stop_reason = event.stop_reason
+        return "".join(text_parts), stop_reason, saw_text_question
+
+    text, stop_reason, saw_text_question = _run(_run_prompt(), timeout=_LLM_TIMEOUT)
+
+    assert stop_reason == "end_turn"
+    assert saw_text_question
+    assert "Mustang Studio" in text, f"Expected project name in response. Got: {text[:500]}"

@@ -98,6 +98,24 @@ class ToolKind(str, Enum):
 
 
 @dataclass(frozen=True)
+class PermissionRequestOption:
+    """One option the client may show for a permission request.
+
+    This is the session-facing projection of ToolAuthorizer suggestions.
+    The Session layer maps it to ACP ``PermissionOption`` objects.
+    """
+
+    option_id: str
+    """Stable id returned by the client when this option is selected."""
+
+    name: str
+    """Human-readable label shown by the client."""
+
+    kind: Literal["allow_once", "allow_always", "reject_once", "reject_always"]
+    """ACP option kind hint used for UI affordance and response semantics."""
+
+
+@dataclass(frozen=True)
 class PermissionRequest:
     """Sent to the Session layer when a tool requires user approval.
 
@@ -124,6 +142,14 @@ class PermissionRequest:
     """The raw tool input dict.  Included so the client can render
     tool-specific UIs (e.g. ``AskUserQuestionTool`` embeds its
     ``questions`` array here).  ``None`` for tools that don't need it."""
+
+    options: tuple[PermissionRequestOption, ...] = field(default_factory=tuple)
+    """Options to expose in ``session/request_permission``.
+
+    Empty means "use the legacy default set" so non-ACP callers and
+    gateway adapters that construct ``PermissionRequest`` directly keep
+    their existing behavior.
+    """
 
 
 @dataclass(frozen=True)

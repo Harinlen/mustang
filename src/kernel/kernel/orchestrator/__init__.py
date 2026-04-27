@@ -295,6 +295,7 @@ from kernel.orchestrator.types import (  # noqa: E402
     OrchestratorDeps,
     PermissionCallback,
     PermissionRequest,
+    PermissionRequestOption,
     PermissionResponse,
     StopReason,
     ToolKind,
@@ -333,6 +334,7 @@ __all__ = [
     "StopReason",
     "ToolKind",
     "PermissionRequest",
+    "PermissionRequestOption",
     "PermissionResponse",
     "PermissionCallback",
 ]

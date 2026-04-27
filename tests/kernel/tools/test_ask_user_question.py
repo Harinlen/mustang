@@ -59,6 +59,21 @@ def _make_questions(n: int = 1) -> list[dict[str, Any]]:
     return questions
 
 
+def _make_text_question(
+    *,
+    question: str = "What should the project name be?",
+    header: str = "Name",
+) -> dict[str, Any]:
+    """Build a valid free-form text question."""
+    return {
+        "type": "text",
+        "question": question,
+        "header": header,
+        "placeholder": "Project name",
+        "maxLength": 80,
+    }
+
+
 def _make_input(
     *,
     questions: list[dict[str, Any]] | None = None,
@@ -118,6 +133,16 @@ class TestMetadata:
         schema = t.to_schema()
         assert "questions" in schema.input_schema["properties"]
 
+    def test_schema_allows_choice_and_text_questions(self) -> None:
+        t = AskUserQuestionTool()
+        items = t.to_schema().input_schema["properties"]["questions"]["items"]
+        assert "anyOf" in items
+        question_types = {
+            variant["properties"].get("type", {}).get("enum", [None])[0]
+            for variant in items["anyOf"]
+        }
+        assert question_types == {"choice", "text"}
+
     def test_concurrency_safe(self) -> None:
         t = AskUserQuestionTool()
         assert t.is_concurrency_safe is True
@@ -147,6 +172,11 @@ class TestValidateInput:
         t = AskUserQuestionTool()
         # Should not raise.
         await t.validate_input(_make_input(), _make_ctx())
+
+    @pytest.mark.asyncio
+    async def test_valid_text_question_without_options(self) -> None:
+        t = AskUserQuestionTool()
+        await t.validate_input({"questions": [_make_text_question()]}, _make_ctx())
 
     @pytest.mark.asyncio
     async def test_missing_questions(self) -> None:
@@ -193,6 +223,15 @@ class TestValidateInput:
             await t.validate_input({"questions": qs}, _make_ctx())
 
     @pytest.mark.asyncio
+    async def test_choice_question_missing_options_still_fails(self) -> None:
+        from kernel.tools.types import ToolInputError
+
+        t = AskUserQuestionTool()
+        qs = [{"type": "choice", "question": "Pick one?", "header": "Pick"}]
+        with pytest.raises(ToolInputError, match="options"):
+            await t.validate_input({"questions": qs}, _make_ctx())
+
+    @pytest.mark.asyncio
     async def test_too_many_options(self) -> None:
         from kernel.tools.types import ToolInputError
 
@@ -230,6 +269,46 @@ class TestValidateInput:
             await t.validate_input({"questions": qs}, _make_ctx())
 
     @pytest.mark.asyncio
+    async def test_invalid_question_type(self) -> None:
+        from kernel.tools.types import ToolInputError
+
+        t = AskUserQuestionTool()
+        qs = [_make_text_question()]
+        qs[0]["type"] = "number"
+        with pytest.raises(ToolInputError, match="type"):
+            await t.validate_input({"questions": qs}, _make_ctx())
+
+    @pytest.mark.asyncio
+    async def test_invalid_text_question_placeholder(self) -> None:
+        from kernel.tools.types import ToolInputError
+
+        t = AskUserQuestionTool()
+        qs = [_make_text_question()]
+        qs[0]["placeholder"] = 123
+        with pytest.raises(ToolInputError, match="placeholder"):
+            await t.validate_input({"questions": qs}, _make_ctx())
+
+    @pytest.mark.asyncio
+    async def test_invalid_text_question_multiline(self) -> None:
+        from kernel.tools.types import ToolInputError
+
+        t = AskUserQuestionTool()
+        qs = [_make_text_question()]
+        qs[0]["multiline"] = "yes"
+        with pytest.raises(ToolInputError, match="multiline"):
+            await t.validate_input({"questions": qs}, _make_ctx())
+
+    @pytest.mark.asyncio
+    async def test_invalid_text_question_max_length(self) -> None:
+        from kernel.tools.types import ToolInputError
+
+        t = AskUserQuestionTool()
+        qs = [_make_text_question()]
+        qs[0]["maxLength"] = 0
+        with pytest.raises(ToolInputError, match="maxLength"):
+            await t.validate_input({"questions": qs}, _make_ctx())
+
+    @pytest.mark.asyncio
     async def test_missing_option_label(self) -> None:
         from kernel.tools.types import ToolInputError
 
@@ -258,6 +337,19 @@ class TestCall:
         llm_text = result.llm_content[0].text
         assert "Option A0" in llm_text
         assert "Question 0?" in llm_text
+
+    @pytest.mark.asyncio
+    async def test_formats_text_answer(self) -> None:
+        t = AskUserQuestionTool()
+        question = _make_text_question()
+        input_ = _make_input(
+            questions=[question],
+            answers={"What should the project name be?": "Mustang Studio"},
+        )
+        result = await _run(t, input_)
+        llm_text = result.llm_content[0].text
+        assert "What should the project name be?" in llm_text
+        assert "Mustang Studio" in llm_text
 
     @pytest.mark.asyncio
     async def test_no_answers(self) -> None:
@@ -431,4 +523,71 @@ class TestPermissionRoundTrip:
         # updated_input, not "(no answer)".
         result_text = str(result_events[0].content)
         assert "Option A0" in result_text
+        assert "(no answer)" not in result_text
+
+    @pytest.mark.asyncio
+    async def test_text_question_updated_input_forwarded(self) -> None:
+        from unittest.mock import MagicMock
+
+        from kernel.llm.types import ToolUseContent
+        from kernel.orchestrator.events import ToolCallResult as ToolCallResultEvent
+        from kernel.orchestrator.tool_executor import ToolExecutor
+        from kernel.orchestrator.types import OrchestratorDeps, PermissionResponse
+        from kernel.tool_authz.types import PermissionAsk, ReasonDefaultRisk
+
+        tool = AskUserQuestionTool()
+
+        class _AskAuth:
+            async def authorize(self, **kw: Any) -> PermissionAsk:
+                return PermissionAsk(
+                    message="Answer questions?",
+                    decision_reason=ReasonDefaultRisk(
+                        risk="low", reason="ask user", tool_name="AskUserQuestion"
+                    ),
+                )
+
+            def grant(self, **kw: Any) -> None:
+                pass
+
+        tool_source = MagicMock()
+        tool_source.lookup.return_value = tool
+        tool_source.file_state.return_value = MagicMock()
+
+        executor = ToolExecutor(
+            deps=OrchestratorDeps(
+                provider=MagicMock(),
+                tool_source=tool_source,
+                authorizer=_AskAuth(),
+            ),
+            session_id="test",
+            cwd=Path.cwd(),
+        )
+
+        questions = [_make_text_question()]
+        executor.add_tool(
+            ToolUseContent(
+                id="tc-1",
+                name="AskUserQuestion",
+                input={"questions": questions},
+            )
+        )
+        executor.finalize_stream()
+
+        async def on_permission(req: Any) -> PermissionResponse:
+            return PermissionResponse(
+                decision="allow_once",
+                updated_input={
+                    "questions": questions,
+                    "answers": {"What should the project name be?": "Mustang Studio"},
+                },
+            )
+
+        events = []
+        async for event, _result in executor.results(on_permission=on_permission, mode="default"):
+            events.append(event)
+
+        result_events = [e for e in events if isinstance(e, ToolCallResultEvent)]
+        assert len(result_events) == 1
+        result_text = str(result_events[0].content)
+        assert "Mustang Studio" in result_text
         assert "(no answer)" not in result_text

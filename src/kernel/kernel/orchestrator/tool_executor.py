@@ -62,6 +62,7 @@ from kernel.orchestrator.types import (
     OrchestratorDeps,
     PermissionCallback,
     PermissionRequest,
+    PermissionRequestOption,
     PermissionResponse,
     ToolKind,
 )
@@ -763,6 +764,7 @@ class ToolExecutor:
             input_summary=decision.message,
             risk_level=risk,  # type: ignore[arg-type]
             tool_input=dict(tool_input),
+            options=_permission_options_from_suggestions(decision.suggestions),
         )
         try:
             async with self._permission_lock:
@@ -911,6 +913,41 @@ class ToolExecutor:
                 is_error=True,
             ),
         )
+
+
+def _permission_options_from_suggestions(
+    suggestions: list[Any],
+) -> tuple[PermissionRequestOption, ...]:
+    """Project authorizer suggestions into session permission options."""
+    options: list[PermissionRequestOption] = []
+    for suggestion in suggestions:
+        outcome = getattr(suggestion, "outcome", None)
+        label = str(getattr(suggestion, "label", "") or "")
+        if outcome == "allow_once":
+            options.append(
+                PermissionRequestOption(
+                    option_id="allow_once",
+                    name=label or "Allow once",
+                    kind="allow_once",
+                )
+            )
+        elif outcome == "allow_always":
+            options.append(
+                PermissionRequestOption(
+                    option_id="allow_always",
+                    name=label or "Allow always",
+                    kind="allow_always",
+                )
+            )
+        elif outcome == "deny":
+            options.append(
+                PermissionRequestOption(
+                    option_id="reject",
+                    name=label or "Reject",
+                    kind="reject_once",
+                )
+            )
+    return tuple(options)
 
 
 def _coerce_content(blocks: list[Any]) -> str | list[Any]:

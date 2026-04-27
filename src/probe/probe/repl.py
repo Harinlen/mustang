@@ -481,8 +481,9 @@ async def _handle_ask_user_question(
 ) -> None:
     """Render AskUserQuestion interactively and send answers back.
 
-    Shows each question with numbered options; the user types a number
-    (or free text for "Other").  Answers are returned via
+    Shows choice questions with numbered options and text questions
+    with a direct answer prompt. Selecting "Other" asks for the custom
+    text in a second prompt. Answers are returned via
     ``PermissionResponse.updated_input``.
     """
     questions = event.tool_input["questions"]  # type: ignore[index]
@@ -491,10 +492,19 @@ async def _handle_ask_user_question(
     print("\n[AskUserQuestion]")
     for q in questions:
         q_text = q.get("question", "?")
+        q_type = q.get("type", "choice")
         options = q.get("options", [])
         multi = q.get("multiSelect", False)
 
         print(f"\n  {q_text}")
+        if q_type == "text":
+            placeholder = q.get("placeholder")
+            if placeholder:
+                print(f"    hint: {placeholder}")
+            raw = await loop.run_in_executor(executor, input, "  answer> ")
+            answers[q_text] = raw.strip()
+            continue
+
         for i, opt in enumerate(options, 1):
             label = opt.get("label", "")
             desc = opt.get("description", "")
@@ -514,6 +524,10 @@ async def _handle_ask_user_question(
                     idx = int(part)
                     if 1 <= idx <= len(options):
                         selected.append(options[idx - 1]["label"])
+                    elif idx == len(options) + 1:
+                        other = await loop.run_in_executor(executor, input, "  other> ")
+                        if other.strip():
+                            selected.append(other.strip())
                     else:
                         selected.append(part)
                 except ValueError:
@@ -524,6 +538,9 @@ async def _handle_ask_user_question(
                 idx = int(raw)
                 if 1 <= idx <= len(options):
                     answers[q_text] = options[idx - 1]["label"]
+                elif idx == len(options) + 1:
+                    other = await loop.run_in_executor(executor, input, "  other> ")
+                    answers[q_text] = other.strip()
                 else:
                     answers[q_text] = raw
             except ValueError:

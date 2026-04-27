@@ -20,6 +20,7 @@ from kernel.tool_authz.types import (
     AuthorizeContext,
     PermissionAllow,
     PermissionAsk,
+    PermissionSuggestionBtn,
     ReasonDefaultRisk,
 )
 from kernel.tools.tool import Tool
@@ -353,6 +354,49 @@ async def test_permission_serialization() -> None:
 
     # Permission was never called concurrently.
     assert max_concurrent <= 1
+
+
+@pytest.mark.anyio
+async def test_permission_request_carries_authorizer_suggestions() -> None:
+    """ToolExecutor forwards dynamic PermissionAsk suggestions to Session."""
+    from kernel.orchestrator.types import PermissionResponse
+
+    class _DestructiveAskAuthorizer(_AskAuthorizer):
+        async def authorize(
+            self, *, tool: Tool, tool_input: dict[str, Any], ctx: AuthorizeContext
+        ) -> PermissionAsk:
+            return PermissionAsk(
+                message=f"approve {tool.name}?",
+                decision_reason=ReasonDefaultRisk(
+                    risk="high", reason="destructive", tool_name=tool.name
+                ),
+                suggestions=[
+                    PermissionSuggestionBtn(label="Allow once", outcome="allow_once"),
+                    PermissionSuggestionBtn(label="Deny", outcome="deny"),
+                ],
+            )
+
+    safe = _SafeTool()
+    executor = ToolExecutor(
+        _deps(safe, authorizer=_DestructiveAskAuthorizer()),
+        session_id="s",
+        cwd=Path.cwd(),
+    )
+    executor.add_tool(_tc("1", "SafeRead", id="1"))
+    executor.finalize_stream()
+
+    seen_options: list[str] = []
+
+    async def _tracked_permission(req: Any) -> PermissionResponse:
+        nonlocal seen_options
+        seen_options = [option.option_id for option in req.options]
+        return PermissionResponse(decision="allow_once")
+
+    events = await _collect_results(executor, on_permission=_tracked_permission)
+
+    assert [e.id for e in events if isinstance(e, ToolCallResultEvent)] == ["1"]
+    assert seen_options == ["allow_once", "reject"]
+    assert "allow_always" not in seen_options
 
 
 @pytest.mark.anyio

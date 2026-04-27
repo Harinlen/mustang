@@ -62,9 +62,14 @@ _OPTION_SCHEMA: dict[str, Any] = {
     "additionalProperties": False,
 }
 
-_QUESTION_SCHEMA: dict[str, Any] = {
+_CHOICE_QUESTION_SCHEMA: dict[str, Any] = {
     "type": "object",
     "properties": {
+        "type": {
+            "type": "string",
+            "enum": ["choice"],
+            "description": "Question type. Omit or use 'choice' for selectable choices.",
+        },
         "question": {
             "type": "string",
             "description": (
@@ -96,12 +101,51 @@ _QUESTION_SCHEMA: dict[str, Any] = {
     "additionalProperties": False,
 }
 
+_TEXT_QUESTION_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "type": {
+            "type": "string",
+            "enum": ["text"],
+            "description": "Use for open-ended questions that need free-form user text.",
+        },
+        "question": {
+            "type": "string",
+            "description": (
+                "The complete question to ask. Should be clear and end with a question mark."
+            ),
+        },
+        "header": {
+            "type": "string",
+            "description": "Short label displayed as a chip/tag (max 12 chars).",
+            "maxLength": 12,
+        },
+        "placeholder": {
+            "type": "string",
+            "description": "Optional hint shown in the text input.",
+        },
+        "multiline": {
+            "type": "boolean",
+            "description": "When true the client may allow a multi-line answer. Default false.",
+            "default": False,
+        },
+        "maxLength": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 4000,
+            "description": "Optional maximum answer length in characters.",
+        },
+    },
+    "required": ["type", "question", "header"],
+    "additionalProperties": False,
+}
+
 _INPUT_SCHEMA: dict[str, Any] = {
     "type": "object",
     "properties": {
         "questions": {
             "type": "array",
-            "items": _QUESTION_SCHEMA,
+            "items": {"anyOf": [_CHOICE_QUESTION_SCHEMA, _TEXT_QUESTION_SCHEMA]},
             "minItems": 1,
             "maxItems": 4,
             "description": "Questions to ask the user (1-4 questions).",
@@ -197,6 +241,14 @@ class AskUserQuestionTool(Tool[dict[str, Any], dict[str, Any]]):
                 raise ToolInputError(f"duplicate question text: {text!r}")
             seen_texts.add(text)
 
+            q_type = q.get("type", "choice")
+            if q_type not in ("choice", "text"):
+                raise ToolInputError(f"questions[{i}].type must be 'choice' or 'text'")
+
+            if q_type == "text":
+                self._validate_text_question(q, i)
+                continue
+
             options = q.get("options")
             if not options or not isinstance(options, list) or len(options) < 2:
                 raise ToolInputError(f"questions[{i}].options must have at least 2 items")
@@ -213,6 +265,26 @@ class AskUserQuestionTool(Tool[dict[str, Any], dict[str, Any]]):
                 if label in seen_labels:
                     raise ToolInputError(f"duplicate option label in questions[{i}]: {label!r}")
                 seen_labels.add(label)
+
+    def _validate_text_question(self, question: dict[str, Any], index: int) -> None:
+        """Validate optional fields for a free-form text question."""
+        from kernel.tools.types import ToolInputError
+
+        placeholder = question.get("placeholder")
+        if placeholder is not None and not isinstance(placeholder, str):
+            raise ToolInputError(f"questions[{index}].placeholder must be a string")
+
+        multiline = question.get("multiline")
+        if multiline is not None and not isinstance(multiline, bool):
+            raise ToolInputError(f"questions[{index}].multiline must be a boolean")
+
+        max_length = question.get("maxLength")
+        if max_length is None:
+            return
+        if not isinstance(max_length, int) or isinstance(max_length, bool):
+            raise ToolInputError(f"questions[{index}].maxLength must be an integer")
+        if max_length < 1 or max_length > 4000:
+            raise ToolInputError(f"questions[{index}].maxLength must be between 1 and 4000")
 
     async def call(
         self,

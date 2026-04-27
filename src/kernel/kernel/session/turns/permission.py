@@ -71,13 +71,7 @@ class SessionPermissionMixin(_SessionMixinBase):
                 title=req.tool_title,
                 input_summary=req.input_summary,
             ),
-            options=[
-                PermissionOption(option_id="allow_once", name="Allow once", kind="allow_once"),
-                PermissionOption(
-                    option_id="allow_always", name="Allow always", kind="allow_always"
-                ),
-                PermissionOption(option_id="reject", name="Reject", kind="reject_once"),
-            ],
+            options=_acp_permission_options(req),
             tool_input=req.tool_input,
         )
 
@@ -118,3 +112,17 @@ class SessionPermissionMixin(_SessionMixinBase):
             decision=decision,
         )
         return PermissionResponse(decision=decision, updated_input=updated_input)
+
+
+def _acp_permission_options(req: PermissionRequest) -> list[PermissionOption]:
+    """Map orchestrator permission options to ACP options."""
+    if req.options:
+        return [
+            PermissionOption(option_id=option.option_id, name=option.name, kind=option.kind)
+            for option in req.options
+        ]
+    return [
+        PermissionOption(option_id="allow_once", name="Allow once", kind="allow_once"),
+        PermissionOption(option_id="allow_always", name="Allow always", kind="allow_always"),
+        PermissionOption(option_id="reject", name="Reject", kind="reject_once"),
+    ]
