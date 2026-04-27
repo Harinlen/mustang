@@ -238,12 +238,13 @@ class SessionEventMapperMixin(_SessionMixinBase):
             )
 
         elif isinstance(event, ToolCallStart):
+            kind = _acp_tool_kind(event.kind.value)
             await self._write_event(
                 session,
                 ToolCallEvent,
                 tool_call_id=event.id,
                 title=event.title,
-                kind=cast(AcpToolKind, event.kind.value),
+                kind=kind,
                 raw_input=event.raw_input,
             )
             await self._broadcast(
@@ -251,7 +252,7 @@ class SessionEventMapperMixin(_SessionMixinBase):
                 AcpToolCallStart(
                     tool_call_id=event.id,
                     title=event.title,
-                    kind=cast(AcpToolKind, event.kind.value),
+                    kind=kind,
                     raw_input=event.raw_input,
                 ),
             )
@@ -393,3 +394,8 @@ class SessionEventMapperMixin(_SessionMixinBase):
                 event.tokens_after,
             )
 
+
+def _acp_tool_kind(kind: str) -> AcpToolKind:
+    """Map Mustang-only tool kinds onto ACP's narrower enum."""
+    allowed = {"read", "edit", "execute", "search", "fetch", "think", "delete", "move", "other"}
+    return cast(AcpToolKind, kind if kind in allowed else "other")

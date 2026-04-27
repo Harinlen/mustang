@@ -437,7 +437,11 @@ class AcpSessionHandler:
         code = getattr(exc, "code", INTERNAL_ERROR)
         if code == INTERNAL_ERROR:
             # Never leak internal details; log them instead.
-            logger.exception("Internal error handling request id=%s", req_id)
+            logger.error(
+                "Internal error handling request id=%s",
+                req_id,
+                exc_info=(type(exc), exc, exc.__traceback__),
+            )
             message = "Internal error"
         elif code == INVALID_PARAMS:
             message = "Invalid params"

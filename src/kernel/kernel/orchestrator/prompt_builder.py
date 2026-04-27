@@ -40,6 +40,7 @@ from pathlib import Path
 
 from kernel.llm.config import ModelRef
 from kernel.llm.types import PromptSection
+from kernel.orchestrator.types import OrchestratorDeps
 
 logger = logging.getLogger(__name__)
 
@@ -69,8 +70,14 @@ class PromptBuilder:
     def __init__(
         self,
         session_id: str,
-        deps: object,  # OrchestratorDeps — avoid circular import
+        deps: OrchestratorDeps,
     ) -> None:
+        """Create a prompt builder.
+
+        Args:
+            session_id: Session id used for subsystem context and logging.
+            deps: Orchestrator dependency bundle.
+        """
         self._session_id = session_id
         self._deps = deps
 
@@ -85,8 +92,8 @@ class PromptBuilder:
         """Return the ordered list of prompt sections for this query.
 
         Args:
-            prompt_text: The user's current prompt text, used for memory
-                relevance queries (currently unused — TODO).
+            prompt_text: The user's current prompt text.  Reserved for
+                future memory relevance queries.
             cwd: Session working directory.  Used for git context
                 injection.  Falls back to ``os.getcwd()`` if not
                 provided (legacy behaviour).
@@ -97,9 +104,12 @@ class PromptBuilder:
                 a ``# Language`` section is injected immediately after
                 the static block (position 8) — stable for the session
                 lifetime so it is cacheable.
+
+        Returns:
+            Ordered prompt sections with cacheable sections before volatile ones.
         """
         effective_cwd = cwd or Path(os.getcwd())
-        prompts = self._deps.prompts  # type: ignore[attr-defined]
+        prompts = self._deps.prompts
         sections: list[PromptSection] = []
 
         # ══ CACHEABLE SECTIONS ══════════════════════════════════════
@@ -127,7 +137,7 @@ class PromptBuilder:
             )
 
         # 9-10. Memory (CC: ``# auto memory`` before ``# Environment``).
-        memory = self._deps.memory  # type: ignore[attr-defined]
+        memory = self._deps.memory
         if memory is not None:
             # Channel C — strategy rules (static, cacheable)
             strategy = memory.get_strategy_text() if hasattr(memory, "get_strategy_text") else ""
@@ -144,7 +154,7 @@ class PromptBuilder:
                 )
 
         # 11. Skills listing
-        skills = self._deps.skills  # type: ignore[attr-defined]
+        skills = self._deps.skills
         if skills is not None:
             listing = skills.get_skill_listing()
             if listing:
@@ -172,7 +182,11 @@ class PromptBuilder:
         # 14. MCP Server Instructions — CC's ``getMcpInstructions()``.
         #     Servers can connect/disconnect between turns.
         getter = getattr(self._deps, "mcp_instructions", None)
-        if getter is not None and prompts is not None and prompts.has("orchestrator/mcp_instructions"):
+        if (
+            getter is not None
+            and prompts is not None
+            and prompts.has("orchestrator/mcp_instructions")
+        ):
             pairs = [(n, i) for n, i in getter() if i]
             if pairs:
                 blocks = "\n\n".join(f"## {name}\n{instructions}" for name, instructions in pairs)
@@ -193,7 +207,8 @@ class PromptBuilder:
             if git_ctx is not None:
                 sections.append(PromptSection(text=git_ctx.format(), cache=False))
 
-        # 16. TODO: AGENTS.md / CLAUDE.md project instructions.
+        # 16. Project instruction files are deferred until the kernel
+        # owns AGENTS.md / CLAUDE.md discovery end-to-end.
 
         # 17. Environment — contains a live timestamp so it must be last.
         #     CC puts ``# Environment`` last for the same reason.
@@ -215,6 +230,13 @@ class PromptBuilder:
     @staticmethod
     def _build_env_context(cwd: Path, *, model: ModelRef | None = None) -> str:
         """Return an environment summary matching CC's ``computeSimpleEnvInfo()``.
+
+        Args:
+            cwd: Effective working directory for the session.
+            model: Optional active model reference for the environment footer.
+
+        Returns:
+            Rendered ``# Environment`` section text.
 
         CC format (prompts.ts:651-710):
         ``# Environment``

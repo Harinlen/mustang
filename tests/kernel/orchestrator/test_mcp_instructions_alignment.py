@@ -25,17 +25,12 @@ import pytest
 
 from kernel.llm.config import ModelRef
 from kernel.llm.types import PromptSection
-from kernel.orchestrator import OrchestratorConfig, OrchestratorDeps
-from kernel.orchestrator.orchestrator import StandardOrchestrator
 from kernel.orchestrator.prompt_builder import PromptBuilder
 from kernel.prompts.manager import PromptManager
 
-from tests.kernel.orchestrator.conftest import FakeLLMProvider
-
 _CC_HEADER = "# MCP Server Instructions"
 _CC_INTRO = (
-    "The following MCP servers have provided instructions "
-    "for how to use their tools and resources:"
+    "The following MCP servers have provided instructions for how to use their tools and resources:"
 )
 
 
@@ -228,9 +223,7 @@ class TestPlacement:
             f"got lang_idx={lang_idx}, mcp_idx={mcp_idx}, env_idx={env_idx}"
         )
 
-    async def test_before_env_when_no_language(
-        self, prompts: PromptManager
-    ) -> None:
+    async def test_before_env_when_no_language(self, prompts: PromptManager) -> None:
         """Without a language section, mcp_instructions still belongs in
         the volatile block before the trailing env context."""
         sections = await _build_sections(
@@ -248,8 +241,7 @@ class TestPlacement:
         assert env_idx is not None, "env section missing"
         assert mcp_idx is not None, "mcp section missing"
         assert mcp_idx < env_idx, (
-            f"mcp must precede env (env is last); "
-            f"got env_idx={env_idx}, mcp_idx={mcp_idx}"
+            f"mcp must precede env (env is last); got env_idx={env_idx}, mcp_idx={mcp_idx}"
         )
 
 

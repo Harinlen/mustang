@@ -1,4 +1,4 @@
-"""Compatibility exports for Orchestrator compaction."""
+"""Compaction internals for the Orchestrator."""
 
 from __future__ import annotations
 
