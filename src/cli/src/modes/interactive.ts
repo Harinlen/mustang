@@ -1,5 +1,4 @@
 import {
-  CombinedAutocompleteProvider,
   Container,
   Editor,
   ProcessTerminal,
@@ -7,15 +6,21 @@ import {
   Text,
   TUI,
   type AutocompleteItem,
+  type AutocompleteProvider,
+  type SlashCommand,
   matchesKey,
 } from "@/tui/index.js";
+import { sanitizeText } from "@/compat/pi-natives.js";
 import type { AcpClient, SessionUpdateParams } from "@/acp/client.js";
 import { MustangSession } from "@/session.js";
 import { AssistantMessageComponent } from "@/active-port/coding-agent/modes/components/assistant-message.js";
 import { StatusLineComponent } from "@/active-port/coding-agent/modes/components/status-line.js";
 import { ToolExecutionComponent } from "@/active-port/coding-agent/modes/components/tool-execution.js";
 import { WelcomeComponent } from "@/active-port/coding-agent/modes/components/welcome.js";
+import { KeybindingsManager } from "@/active-port/coding-agent/config/keybindings.js";
+import { createPromptActionAutocompleteProvider } from "@/active-port/coding-agent/modes/prompt-action-autocomplete.js";
 import { getEditorTheme, initTheme, theme } from "@/active-port/coding-agent/modes/theme/theme.js";
+import { copyToClipboard } from "@/active-port/coding-agent/utils/clipboard.js";
 import { PermissionController } from "@/permissions/controller.js";
 
 type ContentBlock = { type?: string; text?: string; data?: string; mimeType?: string };
@@ -39,6 +44,23 @@ const BUILTIN_COMMANDS: AutocompleteItem[] = [
   { value: "exit", label: "/exit", description: "Exit Mustang CLI" },
 ];
 
+function sortCommandsByLabel(commands: AutocompleteItem[]): AutocompleteItem[] {
+  return [...commands].sort((a, b) => {
+    const aKey = a.label.replace(/^\//, "").toLowerCase();
+    const bKey = b.label.replace(/^\//, "").toLowerCase();
+    if (aKey < bKey) return -1;
+    if (aKey > bKey) return 1;
+    return 0;
+  });
+}
+
+function commandsToSlashCommands(commands: AutocompleteItem[]): SlashCommand[] {
+  return commands.map((command) => ({
+    name: command.value,
+    description: command.description,
+  }));
+}
+
 class MemoryHistory {
   #items: Array<{ prompt: string }> = [];
 
@@ -60,10 +82,11 @@ export class InteractiveMode {
   private readonly chat = new Container();
   private readonly statusLine: StatusLineComponent;
   private readonly permissionController: PermissionController;
+  private readonly keybindings = KeybindingsManager.inMemory();
   private editor!: Editor;
   private readonly history = new MemoryHistory();
   private readonly toolExecutions = new Map<string, ToolHandle>();
-  private commands: AutocompleteItem[] = [...BUILTIN_COMMANDS];
+  private commands: AutocompleteItem[] = sortCommandsByLabel(BUILTIN_COMMANDS);
   private toolOutputExpanded = false;
   private currentMessage: AssistantMessageComponent | null = null;
   private currentText = "";
@@ -117,7 +140,7 @@ export class InteractiveMode {
     this.editor = new Editor(getEditorTheme());
     this.editor.setHistoryStorage(this.history);
     this.editor.setPromptGutter("> ");
-    this.editor.setAutocompleteProvider(new CombinedAutocompleteProvider(this.commands));
+    this.editor.setAutocompleteProvider(this.createAutocompleteProvider());
     this.editor.onSubmit = (text) => void this.submit(text);
 
     this.root.addChild(welcome);
@@ -306,8 +329,53 @@ export class InteractiveMode {
     const merged = new Map<string, AutocompleteItem>();
     for (const item of BUILTIN_COMMANDS) merged.set(item.value, item);
     for (const item of remoteCommands) merged.set(item.value, item);
-    this.commands = [...merged.values()];
-    this.editor.setAutocompleteProvider(new CombinedAutocompleteProvider(this.commands));
+    this.commands = sortCommandsByLabel([...merged.values()]);
+    this.editor.setAutocompleteProvider(this.createAutocompleteProvider());
+  }
+
+  private createAutocompleteProvider(): AutocompleteProvider {
+    return createPromptActionAutocompleteProvider({
+      commands: commandsToSlashCommands(this.commands),
+      basePath: process.cwd(),
+      keybindings: this.keybindings,
+      copyCurrentLine: () => this.copyCurrentLine(),
+      copyPrompt: () => this.copyPrompt(),
+      undo: (prefix) => this.editor.undoPastTransientText(prefix),
+      moveCursorToMessageEnd: () => this.editor.moveToMessageEnd(),
+      moveCursorToMessageStart: () => this.editor.moveToMessageStart(),
+      moveCursorToLineStart: () => this.editor.moveToLineStart(),
+      moveCursorToLineEnd: () => this.editor.moveToLineEnd(),
+    });
+  }
+
+  private showStatus(message: string, color: "dim" | "success" | "warning" | "error" = "dim"): void {
+    this.chat.addChild(new Text(theme.fg(color, message), 1, 0));
+    this.tui.requestRender();
+  }
+
+  private copyCurrentLine(): void {
+    const { line } = this.editor.getCursor();
+    const text = this.editor.getLines()[line] || "";
+    if (!text) {
+      this.showStatus("Nothing to copy");
+      return;
+    }
+    void copyToClipboard(text).then(
+      () => this.showStatus(`Copied line: ${previewText(text)}`, "success"),
+      () => this.showStatus("Failed to copy to clipboard", "warning"),
+    );
+  }
+
+  private copyPrompt(): void {
+    const text = this.editor.getText();
+    if (!text) {
+      this.showStatus("Nothing to copy");
+      return;
+    }
+    void copyToClipboard(text).then(
+      () => this.showStatus(`Copied: ${previewText(text)}`, "success"),
+      () => this.showStatus("Failed to copy to clipboard", "warning"),
+    );
   }
 
   private handleLocalSlashCommand(prompt: string): boolean {
@@ -373,6 +441,11 @@ export class InteractiveMode {
     this.tui.stop();
     this.resolveDone?.();
   }
+}
+
+function previewText(text: string): string {
+  const sanitized = sanitizeText(text).replace(/\s+/g, " ").trim();
+  return sanitized.length > 30 ? `${sanitized.slice(0, 30)}...` : sanitized;
 }
 
 function extractText(content: unknown): string {

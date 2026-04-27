@@ -148,6 +148,21 @@ function fuzzyScore(query: string, target: string): number {
 	return Math.max(1, 40 - gaps * 5);
 }
 
+function commandSortKey(item: Pick<AutocompleteItem, "label" | "value">): string {
+	return (item.label || item.value).replace(/^\//, "").toLowerCase();
+}
+
+function compareCommandItems(
+	a: Pick<AutocompleteItem, "label" | "value">,
+	b: Pick<AutocompleteItem, "label" | "value">,
+): number {
+	const aKey = commandSortKey(a);
+	const bKey = commandSortKey(b);
+	if (aKey < bKey) return -1;
+	if (aKey > bKey) return 1;
+	return 0;
+}
+
 export interface AutocompleteItem {
 	value: string;
 	label: string;
@@ -253,26 +268,23 @@ export class CombinedAutocompleteProvider implements AutocompleteProvider {
 					.filter(cmd => {
 						const name = "name" in cmd ? cmd.name : cmd.value;
 						if (!name) return false;
-						// Match name or description
-						if (fuzzyMatch(lowerPrefix, name.toLowerCase())) return true;
-						const desc = cmd.description?.toLowerCase();
-						return desc ? fuzzyMatch(lowerPrefix, desc) : false;
+						return fuzzyMatch(lowerPrefix, name.toLowerCase());
 					})
 					.map(cmd => {
 						const name = "name" in cmd ? cmd.name : cmd.value;
 						const lowerName = name?.toLowerCase() ?? "";
-						const lowerDesc = cmd.description?.toLowerCase() ?? "";
-						// Score name matches higher than description matches
 						const nameScore = fuzzyMatch(lowerPrefix, lowerName) ? fuzzyScore(lowerPrefix, lowerName) : 0;
-						const descScore = fuzzyMatch(lowerPrefix, lowerDesc) ? fuzzyScore(lowerPrefix, lowerDesc) * 0.5 : 0;
 						return {
 							value: name,
 							label: "name" in cmd ? cmd.name : cmd.label,
-							score: Math.max(nameScore, descScore),
+							score: nameScore,
 							...(cmd.description && { description: cmd.description }),
 						};
 					})
-					.sort((a, b) => b.score - a.score)
+					.sort((a, b) => {
+						const scoreOrder = lowerPrefix ? b.score - a.score : 0;
+						return scoreOrder || compareCommandItems(a, b);
+					})
 					.map(({ score: _, ...rest }) => rest);
 
 				if (matches.length === 0) return null;

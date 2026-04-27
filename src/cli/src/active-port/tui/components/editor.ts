@@ -2492,12 +2492,36 @@ https://github.com/EsotericSoftware/spine-runtimes/actions/runs/19536643416/job/
 		return this.#autocompleteState !== null;
 	}
 
+	#shouldKeepRegularAutocomplete(): boolean {
+		const currentLine = this.#state.lines[this.#state.cursorLine] || "";
+		const textBeforeCursor = currentLine.slice(0, this.#state.cursorCol);
+
+		if (this.#autocompletePrefix.startsWith("/")) {
+			const trimmed = textBeforeCursor.trimStart();
+			return trimmed.startsWith("/") && !trimmed.includes(" ");
+		}
+
+		if (this.#autocompletePrefix.startsWith("#")) {
+			const hashIndex = textBeforeCursor.lastIndexOf("#");
+			if (hashIndex === -1) return false;
+			return !/[\s]/.test(textBeforeCursor.slice(hashIndex + 1));
+		}
+
+		return true;
+	}
+
 	async #updateAutocomplete(): Promise<void> {
 		if (!this.#autocompleteState || !this.#autocompleteProvider) return;
 
 		// In force mode, use forceFileAutocomplete to get suggestions
 		if (this.#autocompleteState === "force") {
 			this.#forceFileAutocomplete();
+			return;
+		}
+
+		if (!this.#shouldKeepRegularAutocomplete()) {
+			this.#cancelAutocomplete();
+			this.onAutocompleteUpdate?.();
 			return;
 		}
 
@@ -2522,9 +2546,25 @@ https://github.com/EsotericSoftware/spine-runtimes/actions/runs/19536643416/job/
 	}
 
 	#debouncedUpdateAutocomplete(): void {
+		if (this.#autocompleteState === "regular" && !this.#shouldKeepRegularAutocomplete()) {
+			this.#cancelAutocomplete();
+			this.onAutocompleteUpdate?.();
+			return;
+		}
+
 		if (this.#autocompleteTimeout) {
 			clearTimeout(this.#autocompleteTimeout);
+			this.#autocompleteTimeout = undefined;
 		}
+
+		if (
+			this.#autocompleteState === "regular" &&
+			(this.#autocompletePrefix.startsWith("/") || this.#autocompletePrefix.startsWith("#"))
+		) {
+			void this.#updateAutocomplete();
+			return;
+		}
+
 		this.#autocompleteTimeout = setTimeout(() => {
 			this.#updateAutocomplete();
 			this.#autocompleteTimeout = undefined;
