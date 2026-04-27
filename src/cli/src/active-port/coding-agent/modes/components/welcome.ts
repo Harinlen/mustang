@@ -1,7 +1,14 @@
 // -nocheck
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { type Component, padding, truncateToWidth, visibleWidth } from "@oh-my-pi/pi-tui";
 import { APP_NAME } from "@oh-my-pi/pi-utils";
 import { theme } from "../../modes/theme/theme";
+
+const DEFAULT_LOGO: string[] = [];
+const LOGO_PATH = join(dirname(fileURLToPath(import.meta.url)), "welcome-logo.txt");
+const WELCOME_LOGO = readLogoLines();
 
 export interface RecentSession {
 	name: string;
@@ -68,12 +75,8 @@ export class WelcomeComponent implements Component {
 		const leftCol = showRightColumn ? dualLeftCol : boxWidth - 2;
 		const rightCol = showRightColumn ? dualRightCol : 0;
 
-		// Block-based OMP logo (gradient: magenta → cyan)
-		// biome-ignore format: preserve ASCII art layout
-		const piLogo = ["▀████████████▀", " ╘███    ███  ", "  ███    ███  ", "  ███    ███  ", " ▄███▄  ▄███▄ "];
-
 		// Apply gradient to logo
-		const logoColored = piLogo.map(line => this.#gradientLine(line));
+		const logoColored = WELCOME_LOGO.map(line => this.#gradientLine(line));
 
 		// Left column - centered content
 		const leftLines = [
@@ -192,32 +195,11 @@ export class WelcomeComponent implements Component {
 		return padding(leftPad) + text + padding(rightPad);
 	}
 
-	/** Apply magenta→cyan gradient to a string */
+	/** Apply the Mustang logo color to a string */
 	#gradientLine(line: string): string {
-		const colors = [
-			"\x1b[38;5;199m", // bright magenta
-			"\x1b[38;5;171m", // magenta-purple
-			"\x1b[38;5;135m", // purple
-			"\x1b[38;5;99m", // purple-blue
-			"\x1b[38;5;75m", // cyan-blue
-			"\x1b[38;5;51m", // bright cyan
-		];
-		const reset = "\x1b[0m";
-
 		let result = "";
-		let colorIdx = 0;
-		const step = Math.max(1, Math.floor(line.length / colors.length));
-
-		for (let i = 0; i < line.length; i++) {
-			if (i > 0 && i % step === 0 && colorIdx < colors.length - 1) {
-				colorIdx++;
-			}
-			const char = line[i];
-			if (char !== " ") {
-				result += colors[colorIdx] + char + reset;
-			} else {
-				result += char;
-			}
+		for (const char of line) {
+			result += char === " " ? char : theme.fg("accent", char);
 		}
 		return result;
 	}
@@ -245,5 +227,16 @@ export class WelcomeComponent implements Component {
 			return `${truncated}${ellipsis}`;
 		}
 		return str + padding(width - visLen);
+	}
+}
+
+function readLogoLines(): string[] {
+	try {
+		const text = readFileSync(LOGO_PATH, "utf8").replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+		const lines = text.split("\n");
+		if (lines.at(-1) === "") lines.pop();
+		return lines.length > 0 ? lines : DEFAULT_LOGO;
+	} catch {
+		return DEFAULT_LOGO;
 	}
 }
