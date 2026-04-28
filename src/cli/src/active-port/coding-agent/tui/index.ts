@@ -9,3 +9,7 @@ export interface StatusLineOptions {
 export function renderStatusLine(options: StatusLineOptions): string {
 	return [options.icon, options.title, options.status, ...(options.meta ?? [])].filter(Boolean).join(" ");
 }
+
+export function renderCodeCell(input: unknown): string[] {
+	return [String(input ?? "")];
+}

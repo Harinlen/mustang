@@ -1,4 +1,5 @@
 export enum ThinkingLevel {
+	Off = "off",
 	Minimal = "minimal",
 	Low = "low",
 	Medium = "medium",

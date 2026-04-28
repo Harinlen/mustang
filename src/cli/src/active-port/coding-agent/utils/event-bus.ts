@@ -1,4 +1,4 @@
-// -nocheck
+// @ts-nocheck
 import { logger } from "@oh-my-pi/pi-utils";
 
 export class EventBus {

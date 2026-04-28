@@ -16,10 +16,124 @@
   ],
   "ports": [
     {
+      "upstream": "packages/coding-agent/src/capability/context-file.ts",
+      "target": "src/cli/src/active-port/coding-agent/capability/context-file.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/capability/extension-module.ts",
+      "target": "src/cli/src/active-port/coding-agent/capability/extension-module.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/capability/extension.ts",
+      "target": "src/cli/src/active-port/coding-agent/capability/extension.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/capability/fs.ts",
+      "target": "src/cli/src/active-port/coding-agent/capability/fs.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/capability/hook.ts",
+      "target": "src/cli/src/active-port/coding-agent/capability/hook.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/capability/index.ts",
+      "target": "src/cli/src/active-port/coding-agent/capability/index.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/capability/instruction.ts",
+      "target": "src/cli/src/active-port/coding-agent/capability/instruction.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/capability/mcp.ts",
+      "target": "src/cli/src/active-port/coding-agent/capability/mcp.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/capability/prompt.ts",
+      "target": "src/cli/src/active-port/coding-agent/capability/prompt.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/capability/rule.ts",
+      "target": "src/cli/src/active-port/coding-agent/capability/rule.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/capability/settings.ts",
+      "target": "src/cli/src/active-port/coding-agent/capability/settings.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/capability/skill.ts",
+      "target": "src/cli/src/active-port/coding-agent/capability/skill.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/capability/slash-command.ts",
+      "target": "src/cli/src/active-port/coding-agent/capability/slash-command.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/capability/ssh.ts",
+      "target": "src/cli/src/active-port/coding-agent/capability/ssh.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/capability/system-prompt.ts",
+      "target": "src/cli/src/active-port/coding-agent/capability/system-prompt.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/capability/tool.ts",
+      "target": "src/cli/src/active-port/coding-agent/capability/tool.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/capability/types.ts",
+      "target": "src/cli/src/active-port/coding-agent/capability/types.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
       "upstream": "packages/coding-agent/src/config/keybindings.ts",
       "target": "src/cli/src/active-port/coding-agent/config/keybindings.ts",
       "phase": "B1",
       "notes": "same-path facade source"
+    },
+    {
+      "upstream": "packages/coding-agent/src/config/model-registry.ts",
+      "target": "src/cli/src/active-port/coding-agent/config/model-registry.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/config/model-resolver.ts",
+      "target": "src/cli/src/active-port/coding-agent/config/model-resolver.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
     },
     {
       "upstream": "packages/coding-agent/src/config/settings-schema.ts",
@@ -32,6 +146,156 @@
       "target": "src/cli/src/active-port/coding-agent/config/settings.ts",
       "phase": "B1",
       "notes": "same-path facade source"
+    },
+    {
+      "upstream": "packages/coding-agent/src/debug/index.ts",
+      "target": "src/cli/src/active-port/coding-agent/debug/index.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/debug/log-formatting.ts",
+      "target": "src/cli/src/active-port/coding-agent/debug/log-formatting.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/debug/log-viewer.ts",
+      "target": "src/cli/src/active-port/coding-agent/debug/log-viewer.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/debug/profiler.ts",
+      "target": "src/cli/src/active-port/coding-agent/debug/profiler.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/debug/report-bundle.ts",
+      "target": "src/cli/src/active-port/coding-agent/debug/report-bundle.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/debug/system-info.ts",
+      "target": "src/cli/src/active-port/coding-agent/debug/system-info.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/discovery/agents-md.ts",
+      "target": "src/cli/src/active-port/coding-agent/discovery/agents-md.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/discovery/agents.ts",
+      "target": "src/cli/src/active-port/coding-agent/discovery/agents.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/discovery/builtin.ts",
+      "target": "src/cli/src/active-port/coding-agent/discovery/builtin.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/discovery/claude-plugins.ts",
+      "target": "src/cli/src/active-port/coding-agent/discovery/claude-plugins.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/discovery/claude.ts",
+      "target": "src/cli/src/active-port/coding-agent/discovery/claude.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/discovery/cline.ts",
+      "target": "src/cli/src/active-port/coding-agent/discovery/cline.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/discovery/codex.ts",
+      "target": "src/cli/src/active-port/coding-agent/discovery/codex.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/discovery/cursor.ts",
+      "target": "src/cli/src/active-port/coding-agent/discovery/cursor.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/discovery/gemini.ts",
+      "target": "src/cli/src/active-port/coding-agent/discovery/gemini.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/discovery/github.ts",
+      "target": "src/cli/src/active-port/coding-agent/discovery/github.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/discovery/helpers.ts",
+      "target": "src/cli/src/active-port/coding-agent/discovery/helpers.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/discovery/index.ts",
+      "target": "src/cli/src/active-port/coding-agent/discovery/index.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/discovery/mcp-json.ts",
+      "target": "src/cli/src/active-port/coding-agent/discovery/mcp-json.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/discovery/opencode.ts",
+      "target": "src/cli/src/active-port/coding-agent/discovery/opencode.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/discovery/plugin-dir-roots.ts",
+      "target": "src/cli/src/active-port/coding-agent/discovery/plugin-dir-roots.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/discovery/ssh.ts",
+      "target": "src/cli/src/active-port/coding-agent/discovery/ssh.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/discovery/substitute-plugin-root.ts",
+      "target": "src/cli/src/active-port/coding-agent/discovery/substitute-plugin-root.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/discovery/vscode.ts",
+      "target": "src/cli/src/active-port/coding-agent/discovery/vscode.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/discovery/windsurf.ts",
+      "target": "src/cli/src/active-port/coding-agent/discovery/windsurf.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
     },
     {
       "upstream": "packages/coding-agent/src/edit/apply-patch/index.ts",
@@ -124,6 +388,66 @@
       "notes": "same-path facade source"
     },
     {
+      "upstream": "packages/coding-agent/src/export/custom-share.ts",
+      "target": "src/cli/src/active-port/coding-agent/export/custom-share.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/export/html/index.ts",
+      "target": "src/cli/src/active-port/coding-agent/export/html/index.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/export/html/template.css",
+      "target": "src/cli/src/active-port/coding-agent/export/html/template.css",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/export/html/template.generated.ts",
+      "target": "src/cli/src/active-port/coding-agent/export/html/template.generated.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/export/html/template.html",
+      "target": "src/cli/src/active-port/coding-agent/export/html/template.html",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/export/html/template.js",
+      "target": "src/cli/src/active-port/coding-agent/export/html/template.js",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/export/html/template.macro.ts",
+      "target": "src/cli/src/active-port/coding-agent/export/html/template.macro.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/export/html/vendor/highlight.min.js",
+      "target": "src/cli/src/active-port/coding-agent/export/html/vendor/highlight.min.js",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/export/html/vendor/marked.min.js",
+      "target": "src/cli/src/active-port/coding-agent/export/html/vendor/marked.min.js",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/export/ttsr.ts",
+      "target": "src/cli/src/active-port/coding-agent/export/ttsr.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
       "upstream": "packages/coding-agent/src/extensibility/extensions/index.ts",
       "target": "src/cli/src/active-port/coding-agent/extensibility/extensions/index.ts",
       "phase": "B1",
@@ -134,6 +458,96 @@
       "target": "src/cli/src/active-port/coding-agent/extensibility/extensions/types.ts",
       "phase": "B1",
       "notes": "same-path facade source"
+    },
+    {
+      "upstream": "packages/coding-agent/src/extensibility/plugins/doctor.ts",
+      "target": "src/cli/src/active-port/coding-agent/extensibility/plugins/doctor.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/extensibility/plugins/git-url.ts",
+      "target": "src/cli/src/active-port/coding-agent/extensibility/plugins/git-url.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/extensibility/plugins/index.ts",
+      "target": "src/cli/src/active-port/coding-agent/extensibility/plugins/index.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/extensibility/plugins/installer.ts",
+      "target": "src/cli/src/active-port/coding-agent/extensibility/plugins/installer.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/extensibility/plugins/loader.ts",
+      "target": "src/cli/src/active-port/coding-agent/extensibility/plugins/loader.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/extensibility/plugins/manager.ts",
+      "target": "src/cli/src/active-port/coding-agent/extensibility/plugins/manager.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/extensibility/plugins/marketplace/cache.ts",
+      "target": "src/cli/src/active-port/coding-agent/extensibility/plugins/marketplace/cache.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/extensibility/plugins/marketplace/fetcher.ts",
+      "target": "src/cli/src/active-port/coding-agent/extensibility/plugins/marketplace/fetcher.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/extensibility/plugins/marketplace/index.ts",
+      "target": "src/cli/src/active-port/coding-agent/extensibility/plugins/marketplace/index.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/extensibility/plugins/marketplace/manager.ts",
+      "target": "src/cli/src/active-port/coding-agent/extensibility/plugins/marketplace/manager.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/extensibility/plugins/marketplace/registry.ts",
+      "target": "src/cli/src/active-port/coding-agent/extensibility/plugins/marketplace/registry.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/extensibility/plugins/marketplace/source-resolver.ts",
+      "target": "src/cli/src/active-port/coding-agent/extensibility/plugins/marketplace/source-resolver.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/extensibility/plugins/marketplace/types.ts",
+      "target": "src/cli/src/active-port/coding-agent/extensibility/plugins/marketplace/types.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/extensibility/plugins/parser.ts",
+      "target": "src/cli/src/active-port/coding-agent/extensibility/plugins/parser.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/extensibility/plugins/types.ts",
+      "target": "src/cli/src/active-port/coding-agent/extensibility/plugins/types.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
     },
     {
       "upstream": "packages/coding-agent/src/extensibility/slash-commands.ts",
@@ -226,6 +640,54 @@
       "notes": "same-path facade source"
     },
     {
+      "upstream": "packages/coding-agent/src/ipy/cancellation.ts",
+      "target": "src/cli/src/active-port/coding-agent/ipy/cancellation.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/ipy/executor.ts",
+      "target": "src/cli/src/active-port/coding-agent/ipy/executor.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/ipy/gateway-coordinator.ts",
+      "target": "src/cli/src/active-port/coding-agent/ipy/gateway-coordinator.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/ipy/kernel.ts",
+      "target": "src/cli/src/active-port/coding-agent/ipy/kernel.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/ipy/modules.ts",
+      "target": "src/cli/src/active-port/coding-agent/ipy/modules.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/ipy/prelude.py",
+      "target": "src/cli/src/active-port/coding-agent/ipy/prelude.py",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/ipy/prelude.ts",
+      "target": "src/cli/src/active-port/coding-agent/ipy/prelude.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/ipy/runtime.ts",
+      "target": "src/cli/src/active-port/coding-agent/ipy/runtime.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
       "upstream": "packages/coding-agent/src/lsp/startup-events.ts",
       "target": "src/cli/src/active-port/coding-agent/lsp/startup-events.ts",
       "phase": "B1",
@@ -236,6 +698,24 @@
       "target": "src/cli/src/active-port/coding-agent/mcp/index.ts",
       "phase": "B1",
       "notes": "same-path facade source"
+    },
+    {
+      "upstream": "packages/coding-agent/src/memories/index.ts",
+      "target": "src/cli/src/active-port/coding-agent/memories/index.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/memories/storage.ts",
+      "target": "src/cli/src/active-port/coding-agent/memories/storage.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/modes/components/agent-dashboard.ts",
+      "target": "src/cli/src/active-port/coding-agent/modes/components/agent-dashboard.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
     },
     {
       "upstream": "packages/coding-agent/src/modes/components/assistant-message.ts",
@@ -280,6 +760,42 @@
       "notes": "coding-agent interactive tui mirror"
     },
     {
+      "upstream": "packages/coding-agent/src/modes/components/extensions/extension-dashboard.ts",
+      "target": "src/cli/src/active-port/coding-agent/modes/components/extensions/extension-dashboard.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/modes/components/extensions/extension-list.ts",
+      "target": "src/cli/src/active-port/coding-agent/modes/components/extensions/extension-list.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/modes/components/extensions/index.ts",
+      "target": "src/cli/src/active-port/coding-agent/modes/components/extensions/index.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/modes/components/extensions/inspector-panel.ts",
+      "target": "src/cli/src/active-port/coding-agent/modes/components/extensions/inspector-panel.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/modes/components/extensions/state-manager.ts",
+      "target": "src/cli/src/active-port/coding-agent/modes/components/extensions/state-manager.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/modes/components/extensions/types.ts",
+      "target": "src/cli/src/active-port/coding-agent/modes/components/extensions/types.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
       "upstream": "packages/coding-agent/src/modes/components/history-search.ts",
       "target": "src/cli/src/active-port/coding-agent/modes/components/history-search.ts",
       "phase": "B1",
@@ -304,10 +820,64 @@
       "notes": "same-path facade source"
     },
     {
+      "upstream": "packages/coding-agent/src/modes/components/model-selector.ts",
+      "target": "src/cli/src/active-port/coding-agent/modes/components/model-selector.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/modes/components/oauth-selector.ts",
+      "target": "src/cli/src/active-port/coding-agent/modes/components/oauth-selector.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/modes/components/plugin-selector.ts",
+      "target": "src/cli/src/active-port/coding-agent/modes/components/plugin-selector.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/modes/components/plugin-settings.ts",
+      "target": "src/cli/src/active-port/coding-agent/modes/components/plugin-settings.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
       "upstream": "packages/coding-agent/src/modes/components/python-execution.ts",
       "target": "src/cli/src/active-port/coding-agent/modes/components/python-execution.ts",
       "phase": "B1",
       "notes": "coding-agent interactive tui mirror"
+    },
+    {
+      "upstream": "packages/coding-agent/src/modes/components/read-tool-group.ts",
+      "target": "src/cli/src/active-port/coding-agent/modes/components/read-tool-group.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/modes/components/session-observer-overlay.ts",
+      "target": "src/cli/src/active-port/coding-agent/modes/components/session-observer-overlay.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/modes/components/session-selector.ts",
+      "target": "src/cli/src/active-port/coding-agent/modes/components/session-selector.ts",
+      "phase": "D2",
+      "notes": "Mustang ACP adapter; no upstream FileSessionStorage calls"
+    },
+    {
+      "upstream": "packages/coding-agent/src/modes/components/settings-defs.ts",
+      "target": "src/cli/src/active-port/coding-agent/modes/components/settings-defs.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/modes/components/settings-selector.ts",
+      "target": "src/cli/src/active-port/coding-agent/modes/components/settings-selector.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
     },
     {
       "upstream": "packages/coding-agent/src/modes/components/status-line.ts",
@@ -364,10 +934,40 @@
       "notes": "coding-agent interactive tui mirror"
     },
     {
+      "upstream": "packages/coding-agent/src/modes/components/theme-selector.ts",
+      "target": "src/cli/src/active-port/coding-agent/modes/components/theme-selector.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/modes/components/todo-reminder.ts",
+      "target": "src/cli/src/active-port/coding-agent/modes/components/todo-reminder.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
       "upstream": "packages/coding-agent/src/modes/components/tool-execution.ts",
       "target": "src/cli/src/active-port/coding-agent/modes/components/tool-execution.ts",
       "phase": "B1",
       "notes": "coding-agent interactive tui mirror"
+    },
+    {
+      "upstream": "packages/coding-agent/src/modes/components/tree-selector.ts",
+      "target": "src/cli/src/active-port/coding-agent/modes/components/tree-selector.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/modes/components/ttsr-notification.ts",
+      "target": "src/cli/src/active-port/coding-agent/modes/components/ttsr-notification.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/modes/components/user-message-selector.ts",
+      "target": "src/cli/src/active-port/coding-agent/modes/components/user-message-selector.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
     },
     {
       "upstream": "packages/coding-agent/src/modes/components/visual-truncate.ts",
@@ -1120,10 +1720,550 @@
       "notes": "same-path facade source"
     },
     {
+      "upstream": "packages/coding-agent/src/priority.json",
+      "target": "src/cli/src/active-port/coding-agent/priority.json",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/prompts/agents/designer.md",
+      "target": "src/cli/src/active-port/coding-agent/prompts/agents/designer.md",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/prompts/agents/explore.md",
+      "target": "src/cli/src/active-port/coding-agent/prompts/agents/explore.md",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/prompts/agents/frontmatter.md",
+      "target": "src/cli/src/active-port/coding-agent/prompts/agents/frontmatter.md",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/prompts/agents/init.md",
+      "target": "src/cli/src/active-port/coding-agent/prompts/agents/init.md",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/prompts/agents/librarian.md",
+      "target": "src/cli/src/active-port/coding-agent/prompts/agents/librarian.md",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/prompts/agents/plan.md",
+      "target": "src/cli/src/active-port/coding-agent/prompts/agents/plan.md",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/prompts/agents/reviewer.md",
+      "target": "src/cli/src/active-port/coding-agent/prompts/agents/reviewer.md",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/prompts/agents/task.md",
+      "target": "src/cli/src/active-port/coding-agent/prompts/agents/task.md",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/prompts/ci-green-request.md",
+      "target": "src/cli/src/active-port/coding-agent/prompts/ci-green-request.md",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/prompts/compaction/branch-summary-context.md",
+      "target": "src/cli/src/active-port/coding-agent/prompts/compaction/branch-summary-context.md",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/prompts/compaction/branch-summary-preamble.md",
+      "target": "src/cli/src/active-port/coding-agent/prompts/compaction/branch-summary-preamble.md",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/prompts/compaction/branch-summary.md",
+      "target": "src/cli/src/active-port/coding-agent/prompts/compaction/branch-summary.md",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/prompts/compaction/compaction-short-summary.md",
+      "target": "src/cli/src/active-port/coding-agent/prompts/compaction/compaction-short-summary.md",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/prompts/compaction/compaction-summary-context.md",
+      "target": "src/cli/src/active-port/coding-agent/prompts/compaction/compaction-summary-context.md",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/prompts/compaction/compaction-summary.md",
+      "target": "src/cli/src/active-port/coding-agent/prompts/compaction/compaction-summary.md",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/prompts/compaction/compaction-turn-prefix.md",
+      "target": "src/cli/src/active-port/coding-agent/prompts/compaction/compaction-turn-prefix.md",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/prompts/compaction/compaction-update-summary.md",
+      "target": "src/cli/src/active-port/coding-agent/prompts/compaction/compaction-update-summary.md",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/prompts/memories/consolidation.md",
+      "target": "src/cli/src/active-port/coding-agent/prompts/memories/consolidation.md",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/prompts/memories/read-path.md",
+      "target": "src/cli/src/active-port/coding-agent/prompts/memories/read-path.md",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/prompts/memories/stage_one_input.md",
+      "target": "src/cli/src/active-port/coding-agent/prompts/memories/stage_one_input.md",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/prompts/memories/stage_one_system.md",
+      "target": "src/cli/src/active-port/coding-agent/prompts/memories/stage_one_system.md",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/prompts/review-request.md",
+      "target": "src/cli/src/active-port/coding-agent/prompts/review-request.md",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/prompts/system/agent-creation-architect.md",
+      "target": "src/cli/src/active-port/coding-agent/prompts/system/agent-creation-architect.md",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/prompts/system/agent-creation-user.md",
+      "target": "src/cli/src/active-port/coding-agent/prompts/system/agent-creation-user.md",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/prompts/system/auto-handoff-threshold-focus.md",
+      "target": "src/cli/src/active-port/coding-agent/prompts/system/auto-handoff-threshold-focus.md",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/prompts/system/btw-user.md",
+      "target": "src/cli/src/active-port/coding-agent/prompts/system/btw-user.md",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/prompts/system/commit-message-system.md",
+      "target": "src/cli/src/active-port/coding-agent/prompts/system/commit-message-system.md",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/prompts/system/custom-system-prompt.md",
+      "target": "src/cli/src/active-port/coding-agent/prompts/system/custom-system-prompt.md",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/prompts/system/eager-todo.md",
+      "target": "src/cli/src/active-port/coding-agent/prompts/system/eager-todo.md",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/prompts/system/file-operations.md",
+      "target": "src/cli/src/active-port/coding-agent/prompts/system/file-operations.md",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/prompts/system/handoff-document.md",
+      "target": "src/cli/src/active-port/coding-agent/prompts/system/handoff-document.md",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/prompts/system/plan-mode-active.md",
+      "target": "src/cli/src/active-port/coding-agent/prompts/system/plan-mode-active.md",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
       "upstream": "packages/coding-agent/src/prompts/system/plan-mode-approved.md",
       "target": "src/cli/src/active-port/coding-agent/prompts/system/plan-mode-approved.md",
       "phase": "B1",
       "notes": "interactive-mode runtime text import"
+    },
+    {
+      "upstream": "packages/coding-agent/src/prompts/system/plan-mode-reference.md",
+      "target": "src/cli/src/active-port/coding-agent/prompts/system/plan-mode-reference.md",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/prompts/system/plan-mode-subagent.md",
+      "target": "src/cli/src/active-port/coding-agent/prompts/system/plan-mode-subagent.md",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/prompts/system/plan-mode-tool-decision-reminder.md",
+      "target": "src/cli/src/active-port/coding-agent/prompts/system/plan-mode-tool-decision-reminder.md",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/prompts/system/subagent-submit-reminder.md",
+      "target": "src/cli/src/active-port/coding-agent/prompts/system/subagent-submit-reminder.md",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/prompts/system/subagent-system-prompt.md",
+      "target": "src/cli/src/active-port/coding-agent/prompts/system/subagent-system-prompt.md",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/prompts/system/subagent-user-prompt.md",
+      "target": "src/cli/src/active-port/coding-agent/prompts/system/subagent-user-prompt.md",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/prompts/system/summarization-system.md",
+      "target": "src/cli/src/active-port/coding-agent/prompts/system/summarization-system.md",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/prompts/system/system-prompt.md",
+      "target": "src/cli/src/active-port/coding-agent/prompts/system/system-prompt.md",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/prompts/system/title-system.md",
+      "target": "src/cli/src/active-port/coding-agent/prompts/system/title-system.md",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/prompts/system/ttsr-interrupt.md",
+      "target": "src/cli/src/active-port/coding-agent/prompts/system/ttsr-interrupt.md",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/prompts/system/web-search.md",
+      "target": "src/cli/src/active-port/coding-agent/prompts/system/web-search.md",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/prompts/tools/apply-patch.md",
+      "target": "src/cli/src/active-port/coding-agent/prompts/tools/apply-patch.md",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/prompts/tools/ask.md",
+      "target": "src/cli/src/active-port/coding-agent/prompts/tools/ask.md",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/prompts/tools/ast-edit.md",
+      "target": "src/cli/src/active-port/coding-agent/prompts/tools/ast-edit.md",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/prompts/tools/ast-grep.md",
+      "target": "src/cli/src/active-port/coding-agent/prompts/tools/ast-grep.md",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/prompts/tools/async-result.md",
+      "target": "src/cli/src/active-port/coding-agent/prompts/tools/async-result.md",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/prompts/tools/bash.md",
+      "target": "src/cli/src/active-port/coding-agent/prompts/tools/bash.md",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/prompts/tools/browser.md",
+      "target": "src/cli/src/active-port/coding-agent/prompts/tools/browser.md",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/prompts/tools/calculator.md",
+      "target": "src/cli/src/active-port/coding-agent/prompts/tools/calculator.md",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/prompts/tools/cancel-job.md",
+      "target": "src/cli/src/active-port/coding-agent/prompts/tools/cancel-job.md",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/prompts/tools/checkpoint.md",
+      "target": "src/cli/src/active-port/coding-agent/prompts/tools/checkpoint.md",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/prompts/tools/chunk-edit.md",
+      "target": "src/cli/src/active-port/coding-agent/prompts/tools/chunk-edit.md",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/prompts/tools/debug.md",
+      "target": "src/cli/src/active-port/coding-agent/prompts/tools/debug.md",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/prompts/tools/exit-plan-mode.md",
+      "target": "src/cli/src/active-port/coding-agent/prompts/tools/exit-plan-mode.md",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/prompts/tools/find.md",
+      "target": "src/cli/src/active-port/coding-agent/prompts/tools/find.md",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/prompts/tools/gemini-image.md",
+      "target": "src/cli/src/active-port/coding-agent/prompts/tools/gemini-image.md",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/prompts/tools/gh-issue-view.md",
+      "target": "src/cli/src/active-port/coding-agent/prompts/tools/gh-issue-view.md",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/prompts/tools/gh-pr-checkout.md",
+      "target": "src/cli/src/active-port/coding-agent/prompts/tools/gh-pr-checkout.md",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/prompts/tools/gh-pr-diff.md",
+      "target": "src/cli/src/active-port/coding-agent/prompts/tools/gh-pr-diff.md",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/prompts/tools/gh-pr-push.md",
+      "target": "src/cli/src/active-port/coding-agent/prompts/tools/gh-pr-push.md",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/prompts/tools/gh-pr-view.md",
+      "target": "src/cli/src/active-port/coding-agent/prompts/tools/gh-pr-view.md",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/prompts/tools/gh-repo-view.md",
+      "target": "src/cli/src/active-port/coding-agent/prompts/tools/gh-repo-view.md",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/prompts/tools/gh-run-watch.md",
+      "target": "src/cli/src/active-port/coding-agent/prompts/tools/gh-run-watch.md",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/prompts/tools/gh-search-issues.md",
+      "target": "src/cli/src/active-port/coding-agent/prompts/tools/gh-search-issues.md",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/prompts/tools/gh-search-prs.md",
+      "target": "src/cli/src/active-port/coding-agent/prompts/tools/gh-search-prs.md",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/prompts/tools/grep.md",
+      "target": "src/cli/src/active-port/coding-agent/prompts/tools/grep.md",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/prompts/tools/hashline.md",
+      "target": "src/cli/src/active-port/coding-agent/prompts/tools/hashline.md",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/prompts/tools/inspect-image-system.md",
+      "target": "src/cli/src/active-port/coding-agent/prompts/tools/inspect-image-system.md",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/prompts/tools/inspect-image.md",
+      "target": "src/cli/src/active-port/coding-agent/prompts/tools/inspect-image.md",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/prompts/tools/lsp.md",
+      "target": "src/cli/src/active-port/coding-agent/prompts/tools/lsp.md",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/prompts/tools/patch.md",
+      "target": "src/cli/src/active-port/coding-agent/prompts/tools/patch.md",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/prompts/tools/poll.md",
+      "target": "src/cli/src/active-port/coding-agent/prompts/tools/poll.md",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/prompts/tools/python.md",
+      "target": "src/cli/src/active-port/coding-agent/prompts/tools/python.md",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/prompts/tools/read-chunk.md",
+      "target": "src/cli/src/active-port/coding-agent/prompts/tools/read-chunk.md",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/prompts/tools/read.md",
+      "target": "src/cli/src/active-port/coding-agent/prompts/tools/read.md",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/prompts/tools/render-mermaid.md",
+      "target": "src/cli/src/active-port/coding-agent/prompts/tools/render-mermaid.md",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/prompts/tools/replace.md",
+      "target": "src/cli/src/active-port/coding-agent/prompts/tools/replace.md",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/prompts/tools/resolve.md",
+      "target": "src/cli/src/active-port/coding-agent/prompts/tools/resolve.md",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/prompts/tools/rewind.md",
+      "target": "src/cli/src/active-port/coding-agent/prompts/tools/rewind.md",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/prompts/tools/search-tool-bm25.md",
+      "target": "src/cli/src/active-port/coding-agent/prompts/tools/search-tool-bm25.md",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/prompts/tools/ssh.md",
+      "target": "src/cli/src/active-port/coding-agent/prompts/tools/ssh.md",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/prompts/tools/task-summary.md",
+      "target": "src/cli/src/active-port/coding-agent/prompts/tools/task-summary.md",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/prompts/tools/task.md",
+      "target": "src/cli/src/active-port/coding-agent/prompts/tools/task.md",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/prompts/tools/todo-write.md",
+      "target": "src/cli/src/active-port/coding-agent/prompts/tools/todo-write.md",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/prompts/tools/vim.md",
+      "target": "src/cli/src/active-port/coding-agent/prompts/tools/vim.md",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/prompts/tools/web-search.md",
+      "target": "src/cli/src/active-port/coding-agent/prompts/tools/web-search.md",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/prompts/tools/write.md",
+      "target": "src/cli/src/active-port/coding-agent/prompts/tools/write.md",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
     },
     {
       "upstream": "packages/coding-agent/src/session/agent-session.ts",
@@ -1154,6 +2294,12 @@
       "target": "src/cli/src/active-port/coding-agent/session/session-manager.ts",
       "phase": "B1",
       "notes": "same-path facade source"
+    },
+    {
+      "upstream": "packages/coding-agent/src/session/session-storage.ts",
+      "target": "src/cli/src/active-port/coding-agent/session/session-storage.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
     },
     {
       "upstream": "packages/coding-agent/src/slash-commands/builtin-registry.ts",
@@ -1202,6 +2348,12 @@
       "target": "src/cli/src/active-port/coding-agent/stt/transcriber.ts",
       "phase": "B1",
       "notes": "same-path facade source"
+    },
+    {
+      "upstream": "packages/coding-agent/src/thinking.ts",
+      "target": "src/cli/src/active-port/coding-agent/thinking.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
     },
     {
       "upstream": "packages/coding-agent/src/tools/bash.ts",
@@ -1300,6 +2452,12 @@
       "notes": "same-path facade source"
     },
     {
+      "upstream": "packages/coding-agent/src/utils/changelog.ts",
+      "target": "src/cli/src/active-port/coding-agent/utils/changelog.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
       "upstream": "packages/coding-agent/src/utils/clipboard.ts",
       "target": "src/cli/src/active-port/coding-agent/utils/clipboard.ts",
       "phase": "B1",
@@ -1312,6 +2470,18 @@
       "notes": "same-path facade source"
     },
     {
+      "upstream": "packages/coding-agent/src/utils/commit-message-generator.ts",
+      "target": "src/cli/src/active-port/coding-agent/utils/commit-message-generator.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/utils/edit-mode.ts",
+      "target": "src/cli/src/active-port/coding-agent/utils/edit-mode.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
       "upstream": "packages/coding-agent/src/utils/event-bus.ts",
       "target": "src/cli/src/active-port/coding-agent/utils/event-bus.ts",
       "phase": "B1",
@@ -1322,6 +2492,24 @@
       "target": "src/cli/src/active-port/coding-agent/utils/external-editor.ts",
       "phase": "B1",
       "notes": "same-path facade source"
+    },
+    {
+      "upstream": "packages/coding-agent/src/utils/file-display-mode.ts",
+      "target": "src/cli/src/active-port/coding-agent/utils/file-display-mode.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/utils/file-mentions.ts",
+      "target": "src/cli/src/active-port/coding-agent/utils/file-mentions.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/utils/fuzzy.ts",
+      "target": "src/cli/src/active-port/coding-agent/utils/fuzzy.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
     },
     {
       "upstream": "packages/coding-agent/src/utils/git.ts",
@@ -1354,6 +2542,12 @@
       "notes": "same-path facade source"
     },
     {
+      "upstream": "packages/coding-agent/src/utils/markit.ts",
+      "target": "src/cli/src/active-port/coding-agent/utils/markit.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
       "upstream": "packages/coding-agent/src/utils/open.ts",
       "target": "src/cli/src/active-port/coding-agent/utils/open.ts",
       "phase": "B1",
@@ -1366,6 +2560,12 @@
       "notes": "same-path facade source"
     },
     {
+      "upstream": "packages/coding-agent/src/utils/shell-snapshot.ts",
+      "target": "src/cli/src/active-port/coding-agent/utils/shell-snapshot.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
       "upstream": "packages/coding-agent/src/utils/sixel.ts",
       "target": "src/cli/src/active-port/coding-agent/utils/sixel.ts",
       "phase": "B1",
@@ -1376,6 +2576,18 @@
       "target": "src/cli/src/active-port/coding-agent/utils/title-generator.ts",
       "phase": "B1",
       "notes": "same-path facade source"
+    },
+    {
+      "upstream": "packages/coding-agent/src/utils/tool-choice.ts",
+      "target": "src/cli/src/active-port/coding-agent/utils/tool-choice.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
+    },
+    {
+      "upstream": "packages/coding-agent/src/utils/tools-manager.ts",
+      "target": "src/cli/src/active-port/coding-agent/utils/tools-manager.ts",
+      "phase": "B-repair",
+      "notes": "R1/R3 upstream parity dependency"
     },
     {
       "upstream": "packages/tui/src/autocomplete.ts",

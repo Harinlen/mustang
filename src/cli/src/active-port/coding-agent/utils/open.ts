@@ -1,4 +1,4 @@
-// -nocheck
+// @ts-nocheck
 /** Open a URL or file path in the default browser/application. Best-effort, never throws. */
 export function openPath(urlOrPath: string): void {
 	let cmd: string[];

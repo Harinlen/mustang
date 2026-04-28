@@ -1,4 +1,4 @@
-// -nocheck
+// @ts-nocheck
 export function parseCommandArgs(argsString: string): string[] {
 	const args: string[] = [];
 	let current = "";

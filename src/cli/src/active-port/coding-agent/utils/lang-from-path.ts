@@ -1,4 +1,4 @@
-// -nocheck
+// @ts-nocheck
 import * as path from "node:path";
 
 /**

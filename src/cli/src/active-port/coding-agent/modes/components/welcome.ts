@@ -61,8 +61,6 @@ export class WelcomeComponent implements Component {
 		const leftMinContentWidth = Math.max(
 			minLeftCol,
 			visibleWidth("Welcome back!"),
-			visibleWidth(this.modelName),
-			visibleWidth(this.providerName),
 		);
 		const desiredLeftCol = Math.min(preferredLeftCol, Math.max(minLeftCol, Math.floor(dualContentWidth * 0.35)));
 		const dualLeftCol =

@@ -4,6 +4,12 @@ CLI 客户端是 Mustang 的**第一个面向用户的前端**。
 它是一个 thin ACP client，所有 agent 逻辑都在 kernel 里运行；
 CLI 只负责 TUI 渲染和用户输入，通过 ACP/WebSocket 与 kernel 通信。
 
+**硬边界**：CLI 与 kernel 的唯一运行时耦合是 WebSocket 上的 ACP/JSON-RPC。
+CLI 不允许 import Python kernel 模块、不允许调用 kernel 子系统对象、不允许直接读写
+kernel SQLite / state / sidecar 文件，也不允许通过本地文件约定绕过协议共享状态。
+如果 CLI 需要新的 kernel 能力，先在 kernel 增加 ACP request / notification，再由
+CLI 通过 WebSocket 消费。
+
 ---
 
 ## 定位
@@ -165,6 +171,11 @@ Mustang 的卖点是 kernel 可插拔前端（CLI、Web、IDE）。
 
 CLI 不走 HTTP REST，只走 ACP WebSocket（与 kernel 现有 `/session` 端点对接）。
 好处：与 IDE 插件、Web 前端共用同一个协议，不需要额外 API。
+
+这条同时意味着：即使 CLI 和 kernel 在同一台机器、同一个 monorepo、同一个用户目录下，
+CLI 也不能直接访问 kernel 的 Python API、SQLite 数据库或 state 文件。所有 session、
+memory、secret、tool、MCP、schedule、git/worktree 等 kernel 状态只能通过 ACP 表面读取
+或修改。
 
 ### D4 — 组件保持 oh-my-pi 接口兼容
 

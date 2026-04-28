@@ -281,12 +281,16 @@ Phase C 已按独立计划实现：
 
 ### Phase D — Session 管理 + 配置 + 主题（P2）
 
+**状态**：已实现（2026-04-28）。
+
 详细执行方案已拆分到
 [`docs/plans/cli-phase-d-session-config-theme.md`](cli-phase-d-session-config-theme.md)。
 
 **目标**：补齐长期使用 CLI 所需的 session 选择 / 恢复、本地 client 配置和主题选择。
 CLI 继续保持 thin-client：session 列表和恢复都走 kernel ACP
 `session/list` / `session/load`，不读取 kernel SQLite，不保存 transcript。
+CLI 与 kernel 的唯一运行时通信方式是 WebSocket ACP；Phase D 不允许 import kernel
+代码、读取 kernel state/SQLite/sidecar 文件，或通过本地文件约定绕过 ACP。
 
 Phase D 按独立计划执行：
 

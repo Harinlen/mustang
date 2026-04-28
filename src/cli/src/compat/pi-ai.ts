@@ -1,5 +1,12 @@
 export type Effort = "minimal" | "low" | "medium" | "high" | "xhigh";
 export const THINKING_EFFORTS: Effort[] = ["minimal", "low", "medium", "high", "xhigh"];
+export const Effort = {
+	Minimal: "minimal",
+	Low: "low",
+	Medium: "medium",
+	High: "high",
+	XHigh: "xhigh",
+} as const;
 
 export interface Usage { input?: number; output?: number; cacheRead?: number; cacheWrite?: number; [key: string]: unknown }
 export interface UsageReport extends Usage { total?: number }
@@ -47,8 +54,17 @@ export function getSupportedEfforts(): Effort[] {
 	return THINKING_EFFORTS;
 }
 
+export function clampThinkingLevelForModel(_model: unknown, level: Effort): Effort {
+	return level;
+}
+
 export function isContextOverflow(_error: unknown): boolean { return false; }
 export function isUsageLimitError(_error: unknown): boolean { return false; }
 export function calculateRateLimitBackoffMs(): number { return 0; }
 export function parseRateLimitReason(): string | undefined { return undefined; }
 export async function completeSimple(): Promise<string> { return ""; }
+export function getEnvApiKey(name?: string): string | undefined { return name ? process.env[name] : undefined; }
+export function getProviderDetails(provider?: string): Record<string, unknown> {
+	return { id: provider, name: provider ?? "provider" };
+}
+export function getOAuthProviders(): unknown[] { return []; }

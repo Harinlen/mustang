@@ -1,5 +1,6 @@
 export type KeyEventType = "press" | "repeat" | "release";
 export type Ellipsis = "none" | "end" | "start" | "middle" | undefined | null;
+export enum FileType { File = "file", Directory = "directory", Symlink = "symlink" }
 
 export interface SliceResult { text: string; width: number }
 export interface ExtractSegmentsResult {
@@ -130,6 +131,10 @@ export async function fuzzyFind(profile: { query?: string; searchPath?: string }
 	return { matches: query ? [{ path: query, isDirectory: false }] : [] };
 }
 
+export async function glob(_pattern: string | string[], _options?: unknown): Promise<string[]> {
+	return [];
+}
+
 export function encodeSixel(_data: Uint8Array, ..._rest: unknown[]): string { return ""; }
 export function detectMacOSAppearance(): "dark" | "light" { return "dark"; }
 export class MacAppearanceObserver { start(): void {}; stop(): void {}; onChange(_cb: unknown): void {} }
@@ -142,6 +147,7 @@ export async function copyToClipboard(_text: string): Promise<void> {}
 export async function readImageFromClipboard(): Promise<ClipboardImage | null> { return null; }
 
 export type ImageFormat = "png" | "jpeg" | "webp";
+export const ImageFormat = { Png: "png", Jpeg: "jpeg", Webp: "webp" } as const;
 export enum SamplingFilter { Nearest = "nearest", Triangle = "triangle", CatmullRom = "catmullRom" }
 export class PhotonImage {
 	static new_from_byteslice(data: Uint8Array): PhotonImage { return new PhotonImage(data); }
@@ -156,3 +162,4 @@ export function resize(_image: PhotonImage, _width: number, _height: number, _fi
 }
 
 export function killTree(_pid: number): void {}
+export function getWorkProfile(): Record<string, unknown> { return {}; }

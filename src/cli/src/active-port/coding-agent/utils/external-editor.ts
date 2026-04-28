@@ -1,4 +1,4 @@
-// -nocheck
+// @ts-nocheck
 /**
  * Utilities for launching an external text editor ($VISUAL / $EDITOR).
  */

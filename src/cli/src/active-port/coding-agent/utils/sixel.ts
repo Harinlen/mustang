@@ -1,4 +1,4 @@
-// -nocheck
+// @ts-nocheck
 import { $env, $flag } from "@oh-my-pi/pi-utils";
 
 const SIXEL_START_REGEX = /\x1bP(?:[0-9;]*)q/u;

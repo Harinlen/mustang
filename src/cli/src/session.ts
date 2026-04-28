@@ -1,10 +1,17 @@
-import { AcpClient, ExecutionResult, PromptResult, SessionUpdateParams } from "@/acp/client.js";
+import type { AcpClient, ExecutionResult, PromptResult, SessionUpdateParams } from "@/acp/client.js";
+import type { CliSessionInfo } from "@/sessions/types.js";
 import { cwd } from "process";
+
+type MustangSessionClient = Pick<
+  AcpClient,
+  "request" | "notify" | "promptRequest" | "executeShellRequest" | "executePythonRequest" | "onUpdate"
+>;
 
 export class MustangSession {
   constructor(
-    private client: AcpClient,
+    private client: MustangSessionClient,
     public readonly sessionId: string,
+    public summary?: CliSessionInfo,
   ) {}
 
   static async create(

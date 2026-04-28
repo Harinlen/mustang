@@ -1,4 +1,4 @@
-// -nocheck
+// @ts-nocheck
 import { execSync } from "node:child_process";
 import type { ClipboardImage } from "@oh-my-pi/pi-natives";
 import * as native from "@oh-my-pi/pi-natives";

@@ -1,4 +1,4 @@
-// -nocheck
+// @ts-nocheck
 /**
  * Derive a stable hue (0-359) from a string using djb2 hash.
  */

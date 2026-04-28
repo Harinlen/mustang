@@ -1,6 +1,7 @@
 import { CombinedAutocompleteProvider, type SlashCommand } from "../src/active-port/tui/autocomplete.js";
 import { KeybindingsManager } from "../src/active-port/coding-agent/config/keybindings.js";
 import { createPromptActionAutocompleteProvider } from "../src/active-port/coding-agent/modes/prompt-action-autocomplete.js";
+import { BUILTIN_COMMANDS, commandsToSlashCommands, sortCommandsByLabel } from "../src/modes/interactive.js";
 import { assert } from "./helpers.js";
 
 const commands: SlashCommand[] = [
@@ -40,6 +41,52 @@ assert(
 	c.items.map(item => item.value).join(",") === "compact,cost,cron",
 	"slash command filtering should match command names only",
 );
+
+const mustangCommands = commandsToSlashCommands(sortCommandsByLabel(BUILTIN_COMMANDS), {
+	modelProfiles: [
+		{ name: "sonnet", providerType: "anthropic", modelId: "claude-sonnet", isDefault: true },
+		{ name: "gpt", providerType: "openai", modelId: "gpt-5.2", isDefault: false },
+	],
+	sessionList: [
+		{
+			sessionId: "sess-1",
+			path: "sess-1",
+			title: "Planning",
+			cwd: "/tmp",
+			updatedAt: null,
+			createdAt: null,
+			archivedAt: null,
+			titleSource: null,
+			totalInputTokens: null,
+			totalOutputTokens: null,
+			raw: { sessionId: "sess-1" },
+		},
+	],
+	themeNames: ["dark", "light"],
+});
+const mustangProvider = new CombinedAutocompleteProvider(mustangCommands);
+
+const sessionArgs = await mustangProvider.getSuggestions(["/session "], 0, 9);
+assert(sessionArgs !== null, "expected /session argument suggestions");
+assert(
+	sessionArgs.items.map(item => item.value).includes("info") && sessionArgs.items.map(item => item.value).includes("delete"),
+	"/session autocomplete should include omp-style info/delete actions",
+);
+
+const sessionSwitchArgs = await mustangProvider.getSuggestions(["/session switch "], 0, 16);
+assert(sessionSwitchArgs !== null, "expected /session switch target suggestions");
+assert(sessionSwitchArgs.items[0]?.value === "sess-1", "/session switch should complete recent session ids");
+
+const modelArgs = await mustangProvider.getSuggestions(["/model switch "], 0, 14);
+assert(modelArgs !== null, "expected /model switch profile suggestions");
+assert(
+	modelArgs.items.map(item => item.value).join(",") === "sonnet,gpt",
+	"/model switch should complete live model profiles in kernel order",
+);
+
+const themeArgs = await mustangProvider.getSuggestions(["/theme set l"], 0, 12);
+assert(themeArgs !== null, "expected /theme set suggestions");
+assert(themeArgs.items[0]?.value === "light", "/theme set should complete loaded themes");
 
 let copiedPrompt = false;
 const promptActionProvider = createPromptActionAutocompleteProvider({

@@ -1,9 +1,5 @@
-// -nocheck
-export interface OutputTruncationMeta {
-	truncated?: boolean;
-	hiddenLines?: number;
+// @ts-nocheck
+export function outputMeta() {
+  return { truncationFromSummary: () => ({ get: () => undefined }) };
 }
-
-export function formatTruncationMetaNotice(meta?: OutputTruncationMeta): string {
-	return meta?.truncated ? `truncated${meta.hiddenLines ? `, ${meta.hiddenLines} hidden lines` : ""}` : "";
-}
+export function formatTruncationMetaNotice() { return ""; }

@@ -13,6 +13,12 @@ consult this file first, then go directly to the file(s) they need.
 > 其余管理器都继承 `Subsystem` ABC，支持"失败降级继续"。详见
 > [`kernel/architecture.md`](kernel/architecture.md#生命周期)。
 
+> **Frontend / CLI 边界（硬规则）**：CLI 和未来所有前端只能通过
+> WebSocket 上的 ACP/JSON-RPC 与 kernel 通信。不得 import `src/kernel`
+> 内部模块，不得直接读写 kernel SQLite / state / sidecar 文件，不得绕过
+> ACP 调用 kernel 子系统。需要的新能力必须先在 kernel 暴露为 ACP 方法或
+> notification，再由 CLI 消费。
+
 ---
 
 ## Kernel Design Docs

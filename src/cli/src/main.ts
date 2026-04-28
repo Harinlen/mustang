@@ -1,67 +1,95 @@
 /**
  * Mustang CLI — ACP TUI client.
  *
- * Usage:
- *   bun run src/main.ts [--port 8200] [--session <id>]
- *
- * Env:
- *   KERNEL_URL     WebSocket URL (default: ws://localhost:8200)
- *   MUSTANG_TOKEN  Auth token (fallback: ~/.mustang/state/auth_token)
+ * Runtime boundary: the CLI talks to the kernel only through WebSocket ACP.
  */
 
 import chalk from "chalk";
-import { AcpClient, KernelNotRunning, readToken } from "@/acp/client.js";
+import { KernelNotRunning } from "@/acp/client.js";
+import { ConfigError, loadCliConfig } from "@/config/loader.js";
 import { InteractiveMode } from "@/modes/interactive.js";
-import { MustangSession } from "@/session.js";
-
-function parseArgs(): { port: number; sessionId: string | null } {
-  const args = process.argv.slice(2);
-  let port = 8200;
-  let sessionId: string | null = null;
-
-  for (let i = 0; i < args.length; i++) {
-    if (args[i] === "--port" && args[i + 1]) {
-      port = parseInt(args[++i], 10);
-    } else if (args[i] === "--session" && args[i + 1]) {
-      sessionId = args[++i];
-    }
-  }
-
-  return { port, sessionId };
-}
+import { SessionService } from "@/sessions/service.js";
+import { connectKernel } from "@/startup/connect.js";
+import { ArgError, parseCliArgs, usage } from "@/startup/args.js";
+import { resolveStartupSession } from "@/startup/session-startup.js";
+import { applyThemeConfig } from "@/startup/theme.js";
 
 async function main(): Promise<void> {
-  const { port, sessionId: loadId } = parseArgs();
-  const kernelUrl = process.env.KERNEL_URL ?? `ws://localhost:${port}`;
-
-  let token: string;
+  let args;
   try {
-    token = readToken();
-  } catch (e) {
-    console.error(chalk.red((e as Error).message));
-    process.exit(1);
+    args = parseCliArgs();
+  } catch (error) {
+    if (error instanceof ArgError) {
+      console.error(chalk.red(error.message));
+      console.error(usage());
+      process.exit(2);
+    }
+    throw error;
   }
 
-  let client: AcpClient;
+  if (args.help) {
+    console.log(usage());
+    return;
+  }
+
+  let loaded;
   try {
-    client = await AcpClient.connect(kernelUrl, token);
-  } catch (e) {
-    if (e instanceof KernelNotRunning) {
-      console.error(chalk.red(e.message));
+    loaded = loadCliConfig({ args });
+  } catch (error) {
+    if (error instanceof ConfigError) {
+      console.error(chalk.red(error.message));
+      process.exit(1);
+    }
+    throw error;
+  }
+
+  const themeResult = await applyThemeConfig(loaded.config);
+  if (themeResult.warning) console.error(chalk.yellow(themeResult.warning));
+
+  let connection;
+  try {
+    connection = await connectKernel(loaded.config);
+  } catch (error) {
+    if (error instanceof KernelNotRunning) {
+      console.error(chalk.red(error.message));
     } else {
-      console.error(chalk.red(`Connection failed: ${(e as Error).message}`));
+      console.error(chalk.red(`Connection failed: ${(error as Error).message}`));
     }
     process.exit(1);
   }
 
-  const session = loadId
-    ? await MustangSession.load(client, loadId)
-    : await MustangSession.create(client);
+  const service = new SessionService(connection.client);
+  const startup = await resolveStartupSession(service, args, loaded.config);
+  if (startup.warning) console.error(chalk.yellow(startup.warning));
 
-  await new InteractiveMode(client, session).run();
+  if (args.prompt || args.print) {
+    await runPrintPrompt(startup.session, args.prompt ?? "");
+    connection.client.close();
+    connection.autostarted?.stop();
+    return;
+  }
+
+  await new InteractiveMode(connection.client, startup.session, {
+    sessionService: service,
+    recentSessions: startup.recentSessions.slice(0, loaded.config.ui.welcome_recent),
+    theme: loaded.config.ui,
+  }).run();
+
+  connection.autostarted?.stop();
 }
 
-main().catch((e) => {
-  console.error(e);
+async function runPrintPrompt(session: { prompt(text: string, onUpdate: (update: any) => void): Promise<unknown> }, prompt: string): Promise<void> {
+  if (!prompt.trim()) return;
+  await session.prompt(prompt, (update) => {
+    if (update.sessionUpdate === "agent_message_chunk" && typeof update.content?.text === "string") {
+      process.stdout.write(update.content.text);
+    }
+  });
+  process.stdout.write("\n");
+}
+
+main().catch((error) => {
+  console.error(error);
   process.exit(1);
 });
+
