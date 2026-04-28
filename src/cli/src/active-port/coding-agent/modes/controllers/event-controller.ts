@@ -20,15 +20,25 @@ type AgentSessionEventHandlers = {
 	[E in AgentSessionEventKind]: (event: Extract<AgentSessionEvent, { type: E }>) => Promise<void>;
 };
 
+function hasVisibleAssistantContent(message: AssistantMessage): boolean {
+	return message.content.some(
+		content =>
+			(content.type === "text" && content.text.trim()) ||
+			(content.type === "thinking" && content.thinking.trim()),
+	);
+}
+
 export class EventController {
 	#lastReadGroup: ReadToolGroupComponent | undefined = undefined;
 	#lastThinkingCount = 0;
 	#renderedCustomMessages = new Set<string>();
 	#lastIntent: string | undefined = undefined;
 	#backgroundToolCallIds = new Set<string>();
+	#completedToolCallIds = new Set<string>();
 	#readToolCallArgs = new Map<string, Record<string, unknown>>();
 	#readToolCallAssistantComponents = new Map<string, AssistantMessageComponent>();
 	#lastAssistantComponent: AssistantMessageComponent | undefined = undefined;
+	#streamingComponentMounted = false;
 	#idleCompactionTimer?: NodeJS.Timeout;
 	#handlers: AgentSessionEventHandlers;
 
@@ -139,7 +149,9 @@ export class EventController {
 		this.#lastIntent = undefined;
 		this.#readToolCallArgs.clear();
 		this.#readToolCallAssistantComponents.clear();
+		this.#completedToolCallIds.clear();
 		this.#lastAssistantComponent = undefined;
+		this.#streamingComponentMounted = false;
 		if (this.ctx.retryEscapeHandler) {
 			this.ctx.editor.onEscape = this.ctx.retryEscapeHandler;
 			this.ctx.retryEscapeHandler = undefined;
@@ -192,8 +204,8 @@ export class EventController {
 			this.#resetReadGroup();
 			this.ctx.streamingComponent = new AssistantMessageComponent(undefined, this.ctx.hideThinkingBlock);
 			this.ctx.streamingMessage = event.message;
-			this.ctx.chatContainer.addChild(this.ctx.streamingComponent);
 			this.ctx.streamingComponent.updateContent(this.ctx.streamingMessage);
+			this.#mountStreamingComponentIfVisible();
 			this.ctx.ui.requestRender();
 		}
 	}
@@ -202,6 +214,7 @@ export class EventController {
 		if (this.ctx.streamingComponent && event.message.role === "assistant") {
 			this.ctx.streamingMessage = event.message;
 			this.ctx.streamingComponent.updateContent(this.ctx.streamingMessage);
+			this.#mountStreamingComponentIfVisible();
 
 			const thinkingCount = this.ctx.streamingMessage.content.filter(
 				content => content.type === "thinking" && content.thinking.trim(),
@@ -213,6 +226,7 @@ export class EventController {
 
 			for (const content of this.ctx.streamingMessage.content) {
 				if (content.type !== "toolCall") continue;
+				if (this.#completedToolCallIds.has(content.id) && !this.ctx.pendingTools.has(content.id)) continue;
 				if (content.name === "read") {
 					this.#trackReadToolCall(content.id, content.arguments);
 					const component = this.ctx.pendingTools.get(content.id);
@@ -301,10 +315,19 @@ export class EventController {
 			this.#lastAssistantComponent.setUsageInfo(event.message.usage);
 			this.ctx.streamingComponent = undefined;
 			this.ctx.streamingMessage = undefined;
+			this.#streamingComponentMounted = false;
 			this.ctx.statusLine.invalidate();
 			this.ctx.updateEditorTopBorder();
 		}
 		this.ctx.ui.requestRender();
+	}
+
+	#mountStreamingComponentIfVisible(): void {
+		if (this.#streamingComponentMounted) return;
+		if (!this.ctx.streamingComponent || !this.ctx.streamingMessage) return;
+		if (!hasVisibleAssistantContent(this.ctx.streamingMessage)) return;
+		this.ctx.chatContainer.addChild(this.ctx.streamingComponent);
+		this.#streamingComponentMounted = true;
 	}
 
 	async #handleToolExecutionStart(event: Extract<AgentSessionEvent, { type: "tool_execution_start" }>): Promise<void> {
@@ -380,6 +403,7 @@ export class EventController {
 				} else {
 					this.#backgroundToolCallIds.delete(event.toolCallId);
 					this.#clearReadToolCall(event.toolCallId);
+					this.#completedToolCallIds.add(event.toolCallId);
 				}
 				this.ctx.ui.requestRender();
 			} else {
@@ -402,6 +426,7 @@ export class EventController {
 					this.ctx.pendingTools.delete(event.toolCallId);
 					this.#backgroundToolCallIds.delete(event.toolCallId);
 					this.#clearReadToolCall(event.toolCallId);
+					this.#completedToolCallIds.add(event.toolCallId);
 				}
 				this.ctx.ui.requestRender();
 			}
@@ -416,6 +441,7 @@ export class EventController {
 				} else {
 					this.ctx.pendingTools.delete(event.toolCallId);
 					this.#backgroundToolCallIds.delete(event.toolCallId);
+					this.#completedToolCallIds.add(event.toolCallId);
 				}
 				this.ctx.ui.requestRender();
 			}
@@ -449,9 +475,12 @@ export class EventController {
 			this.ctx.statusContainer.clear();
 		}
 		if (this.ctx.streamingComponent) {
-			this.ctx.chatContainer.removeChild(this.ctx.streamingComponent);
+			if (this.#streamingComponentMounted) {
+				this.ctx.chatContainer.removeChild(this.ctx.streamingComponent);
+			}
 			this.ctx.streamingComponent = undefined;
 			this.ctx.streamingMessage = undefined;
+			this.#streamingComponentMounted = false;
 		}
 		await this.ctx.flushPendingModelSwitch();
 		for (const toolCallId of Array.from(this.ctx.pendingTools.keys())) {

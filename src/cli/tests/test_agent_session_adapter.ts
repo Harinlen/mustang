@@ -63,4 +63,30 @@ assert(assistant?.content.some((block: { type: string; text?: string }) => block
 assert(assistant?.content.some((block: { type: string; thinking?: string }) => block.type === "thinking" && block.thinking === "thinking"), "assistant thinking chunk should be appended");
 assert(assistant?.content.some((block: { type: string; id?: string }) => block.type === "toolCall" && block.id === "tool-1"), "tool call should be appended to assistant message");
 
+const delayedAdapter = new MustangAgentSessionAdapter({
+	client: {} as never,
+	session: fakeSession as never,
+	sessionService: fakeSessionService as never,
+	modelProfiles: [],
+});
+const delayedEvents: string[] = [];
+delayedAdapter.subscribe(async event => {
+	if (event.type === "message_update" || event.type === "tool_execution_end") {
+		await new Promise(resolve => setTimeout(resolve, 20));
+	}
+	delayedEvents.push(event.type);
+});
+
+await delayedAdapter.prompt("hi");
+
+const messageUpdateIndex = delayedEvents.indexOf("message_update");
+const messageEndIndex = delayedEvents.lastIndexOf("message_end");
+const agentEndIndex = delayedEvents.indexOf("agent_end");
+assert(messageUpdateIndex !== -1, "delayed listener should still receive message_update before prompt returns");
+assert(agentEndIndex !== -1, "delayed listener should receive agent_end before prompt returns");
+assert(
+	messageUpdateIndex < messageEndIndex && messageEndIndex < agentEndIndex,
+	`session events should be flushed in order, got: ${delayedEvents.join(",")}`,
+);
+
 console.log("PASS: agent session adapter");

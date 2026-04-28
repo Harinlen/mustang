@@ -14,11 +14,37 @@ import {
 import { PermissionQueue } from "./queue.js";
 import type { StructuredQuestion, StructuredQuestionPrompt, ToolPermissionPrompt } from "./types.js";
 
+export type HookPromptHost = {
+  showHookSelector(
+    title: string,
+    options: string[],
+    dialogOptions?: {
+      outline?: boolean;
+      helpText?: string;
+      initialIndex?: number;
+      timeout?: number;
+      onTimeout?: () => void;
+      signal?: AbortSignal;
+    },
+  ): Promise<string | undefined>;
+  showHookInput(
+    title: string,
+    placeholder?: string,
+    dialogOptions?: { timeout?: number; onTimeout?: () => void; signal?: AbortSignal },
+  ): Promise<string | undefined>;
+  showHookEditor?(
+    title: string,
+    prefill?: string,
+    dialogOptions?: { signal?: AbortSignal },
+    editorOptions?: { promptStyle?: boolean },
+  ): Promise<string | undefined>;
+};
+
 export class PermissionController {
   readonly #queue = new PermissionQueue();
 
   constructor(
-    private readonly tui: TUI,
+    private readonly promptHost: TUI | HookPromptHost,
     private readonly onError: (message: string) => void = () => {},
   ) {}
 
@@ -100,6 +126,9 @@ export class PermissionController {
   }
 
   #showSelector(title: string, options: string[]): Promise<string | undefined> {
+    const host = this.#hookPromptHost();
+    if (host) return host.showHookSelector(title, options, { outline: true });
+
     return new Promise((resolve) => {
       let handle: OverlayHandle | undefined;
       let removeCtrlCListener: (() => void) | undefined;
@@ -123,6 +152,9 @@ export class PermissionController {
   }
 
   #showInput(title: string, placeholder?: string): Promise<string | undefined> {
+    const host = this.#hookPromptHost();
+    if (host) return host.showHookInput(title, placeholder);
+
     return new Promise((resolve) => {
       let handle: OverlayHandle | undefined;
       let removeCtrlCListener: (() => void) | undefined;
@@ -146,6 +178,9 @@ export class PermissionController {
   }
 
   #showEditor(title: string, prefill?: string): Promise<string | undefined> {
+    const host = this.#hookPromptHost();
+    if (host?.showHookEditor) return host.showHookEditor(title, prefill, undefined, { promptStyle: true });
+
     return new Promise((resolve) => {
       let handle: OverlayHandle | undefined;
       let removeCtrlCListener: (() => void) | undefined;
@@ -173,6 +208,17 @@ export class PermissionController {
       cancel();
       return { consume: true };
     });
+  }
+
+  #hookPromptHost(): HookPromptHost | undefined {
+    if ("showHookSelector" in this.promptHost && "showHookInput" in this.promptHost) {
+      return this.promptHost;
+    }
+    return undefined;
+  }
+
+  get tui(): TUI {
+    return this.promptHost as TUI;
   }
 
   #questionTitle(question: StructuredQuestion): string {

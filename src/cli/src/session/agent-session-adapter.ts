@@ -1,4 +1,5 @@
 import { settings } from "@/active-port/coding-agent/config/settings.js";
+import { setMustangSessionProvider, type SessionInfo } from "@/active-port/coding-agent/session/session-manager.js";
 import type { AgentSessionEvent } from "@/active-port/coding-agent/session/agent-session.js";
 import type { AcpClient, SessionUpdateParams } from "@/acp/client.js";
 import { ModelService, type ModelProfile } from "@/models/service.js";
@@ -58,6 +59,7 @@ export class MustangAgentSessionAdapter {
 	#listeners = new Set<Listener>();
 	#activeAssistant: AssistantMessage | undefined;
 	#toolNames = new Map<string, string>();
+	#eventTail: Promise<void> = Promise.resolve();
 
 	constructor(
 		private readonly options: MustangAgentSessionAdapterOptions,
@@ -78,6 +80,9 @@ export class MustangAgentSessionAdapter {
 			messages: this.messages,
 		};
 		this.state = { messages: this.messages, model: this.model };
+		setMustangSessionProvider({
+			listSessions: async (_cwd?: string, limit = 50) => this.listSessionInfos(limit),
+		});
 	}
 
 	subscribe(listener: Listener): () => void {
@@ -108,20 +113,25 @@ export class MustangAgentSessionAdapter {
 
 		try {
 			const result = await this.options.session.prompt(text, update => this.#handleUpdate(update));
+			await this.#flushEvents();
 			this.#activeAssistant.stopReason = String((result as { stopReason?: string })?.stopReason ?? "stop");
 			this.#emit({ type: "message_end", message: this.#activeAssistant });
+			await this.#flushEvents();
 			return result;
 		} catch (error) {
 			if (this.#activeAssistant) {
+				await this.#flushEvents();
 				this.#activeAssistant.stopReason = "error";
 				this.#activeAssistant["errorMessage"] = (error as Error).message;
 				this.#emit({ type: "message_end", message: this.#activeAssistant });
+				await this.#flushEvents();
 			}
 			throw error;
 		} finally {
 			this.isStreaming = false;
 			this.#activeAssistant = undefined;
 			this.#emit({ type: "agent_end" });
+			await this.#flushEvents();
 		}
 	}
 
@@ -193,10 +203,11 @@ export class MustangAgentSessionAdapter {
 	async promptCustomMessage(message: { content?: string }, options?: Record<string, unknown>): Promise<unknown> {
 		return this.prompt(String(message.content ?? ""), options);
 	}
-	async newSession(): Promise<void> {
+	async newSession(): Promise<boolean> {
 		const result = await this.options.sessionService.create(process.cwd());
 		this.options.session = new MustangSession(this.options.sessionService.clientForSession(), result.sessionId);
 		this.sessionManager.replaceSession(this.options.session);
+		return true;
 	}
 	async fork(): Promise<boolean> { return false; }
 	async runIdleCompaction(): Promise<void> {}
@@ -230,6 +241,11 @@ export class MustangAgentSessionAdapter {
 		return this.options.sessionService.list({ cwd: this.sessionManager.getCwd(), limit });
 	}
 
+	async listSessionInfos(limit = 50): Promise<SessionInfo[]> {
+		const sessions = await this.listSessions(limit);
+		return sessions.map(cliSessionToOmpSessionInfo);
+	}
+
 	async createSession(): Promise<string> {
 		const result = await this.options.sessionService.create(this.sessionManager.getCwd());
 		this.options.session = new MustangSession(this.options.sessionService.clientForSession(), result.sessionId);
@@ -245,6 +261,11 @@ export class MustangAgentSessionAdapter {
 		return result.sessionId;
 	}
 
+	async switchSession(sessionPath: string): Promise<boolean> {
+		await this.loadSession(sessionPath);
+		return true;
+	}
+
 	async archiveCurrentSession(archived: boolean): Promise<CliSessionInfo> {
 		const summary = await this.options.sessionService.archive(this.options.session.sessionId, archived);
 		this.options.session.summary = summary;
@@ -255,6 +276,10 @@ export class MustangAgentSessionAdapter {
 	async deleteCurrentSessionAndCreate(): Promise<string> {
 		await this.options.sessionService.delete(this.options.session.sessionId, { force: true });
 		return this.createSession();
+	}
+
+	async deleteSessionByPath(sessionPath: string): Promise<boolean> {
+		return this.options.sessionService.delete(sessionPath, { force: true });
 	}
 
 	#handleUpdate(update: SessionUpdateParams): void {
@@ -320,7 +345,19 @@ export class MustangAgentSessionAdapter {
 	}
 
 	#emit(event: AgentSessionEvent): void {
-		for (const listener of this.#listeners) void listener(event);
+		this.#eventTail = this.#eventTail
+			.then(async () => {
+				for (const listener of this.#listeners) {
+					await listener(event);
+				}
+			})
+			.catch(error => {
+				console.error("[cli] session event handler failed:", error);
+			});
+	}
+
+	async #flushEvents(): Promise<void> {
+		await this.#eventTail;
 	}
 }
 
@@ -404,4 +441,28 @@ function normalizeToolContent(content: unknown, status: string): Array<{ type: s
 
 function normalizeTitleSource(value: unknown): "auto" | "user" | undefined {
 	return value === "auto" || value === "user" ? value : undefined;
+}
+
+function cliSessionToOmpSessionInfo(session: CliSessionInfo): SessionInfo {
+	const created = parseDate(session.createdAt) ?? parseDate(session.updatedAt) ?? new Date(0);
+	const modified = parseDate(session.updatedAt) ?? created;
+	const title = session.title?.trim() || undefined;
+	const firstMessage = title || session.sessionId;
+	return {
+		path: session.path || session.sessionId,
+		id: session.sessionId,
+		cwd: session.cwd || process.cwd(),
+		title,
+		created,
+		modified,
+		messageCount: 0,
+		firstMessage,
+		allMessagesText: `${title ?? ""} ${session.cwd ?? ""} ${session.sessionId}`.trim(),
+	};
+}
+
+function parseDate(value: string | null | undefined): Date | undefined {
+	if (!value) return undefined;
+	const date = new Date(value);
+	return Number.isNaN(date.getTime()) ? undefined : date;
 }

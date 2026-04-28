@@ -135,6 +135,45 @@ wall twice.
   distinguish "already gone" from "deleted now" or their logs become
   misleading until the audit record ages out.
 
+- **CLI streaming event listeners are async and must be serialized.**
+  `MustangAgentSessionAdapter` originally emitted OMP-style events with
+  `void listener(event)`.  Slow tool rendering could still be handling a
+  `message_update` / `tool_execution_end` when `message_end` and
+  `agent_end` arrived, causing the final assistant text to be persisted
+  by the kernel but never rendered in the TUI.  Queue adapter events and
+  flush before ending the assistant turn.
+
+- **CLI status area is for one-line status, not structured output.**
+  `active-port` `/session list` originally rendered the numbered session
+  list through `showStatus()`, which writes to the bottom status
+  container.  Multiline content there visually collides with the editor
+  and status line.  Lists, tables, transcripts, and other durable output
+  should render into `chatContainer` or a dedicated selector component.
+
+- **Do not mount empty assistant components before tool output.**
+  The OMP event controller adaptation originally added an
+  `AssistantMessageComponent` on `message_start` even when it had no
+  visible text/thinking yet.  Tool components were appended later, so
+  final text streamed into the already-mounted component appeared above
+  the tools.  Mount assistant components lazily when visible content
+  arrives so tool-first turns render as tool output first, answer second.
+
+- **Copied active-port code needs an automated drift ledger.**
+  "Copied from OMP" is not a guarantee unless the copied files are
+  compared against a recorded OMP baseline.  For CLI/TUI work, keep
+  upstream-identical files enforced by `check_omp_parity.ts`, and
+  require every intentional diff to be classified as an ACP adapter
+  seam or unsupported-service stub with a regression test.
+
+- **Full assistant message updates can replay completed tool calls.**
+  `MustangAgentSessionAdapter` emits OMP-style `message_update` events
+  with the whole assistant message.  After a tool has completed,
+  later answer chunks still carry the earlier `toolCall` block.  If the
+  TUI has already removed that id from `pendingTools`, blindly scanning
+  the full message recreates a stale `pending <tool>` component below
+  the final answer.  Track completed tool call ids in the event
+  controller and skip replay unless the tool is still genuinely pending.
+
 ---
 
 ## Kernel Design-debt Backlog

@@ -706,6 +706,9 @@ export class SelectorController {
 					if (!(await this.#detachActiveSessionBeforeDeletion(session.path))) {
 						return false;
 					}
+					if (typeof this.ctx.session.deleteSessionByPath === "function") {
+						return await this.ctx.session.deleteSessionByPath(session.path);
+					}
 					const storage = new FileSessionStorage();
 					try {
 						await storage.deleteSessionWithArtifacts(session.path);
@@ -789,14 +792,6 @@ export class SelectorController {
 			return;
 		}
 
-		// Check if session file exists (may not exist for brand new sessions)
-		const storage = new FileSessionStorage();
-		const fileExists = await storage.exists(sessionFile);
-		if (!fileExists) {
-			this.ctx.showError("Session has not been saved yet");
-			return;
-		}
-
 		const confirmed = await this.ctx.showHookConfirm(
 			"Delete Session",
 			"This will permanently delete the current session.\nYou will be returned to the session selector.",
@@ -812,8 +807,13 @@ export class SelectorController {
 			return;
 		}
 
-		// Delete the session file and artifacts directory
-		await storage.deleteSessionWithArtifacts(sessionFile);
+		if (typeof this.ctx.session.deleteSessionByPath === "function") {
+			await this.ctx.session.deleteSessionByPath(sessionFile);
+		} else {
+			// Delete the session file and artifacts directory
+			const storage = new FileSessionStorage();
+			await storage.deleteSessionWithArtifacts(sessionFile);
+		}
 
 		// Show session selector
 		this.ctx.showStatus("Session deleted");

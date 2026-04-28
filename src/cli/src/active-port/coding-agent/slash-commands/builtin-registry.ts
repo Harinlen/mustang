@@ -1,4 +1,5 @@
 // @ts-nocheck
+
 export interface ParsedBuiltinSlashCommand {
 	name: string;
 	args?: string;
@@ -61,12 +62,7 @@ async function executeSessionCommand(ctx: any, argsText: string): Promise<boolea
 			await ctx.handleSessionCommand?.();
 			return true;
 		case "list": {
-			const sessions = await session.listSessions?.(20);
-			if (!Array.isArray(sessions) || sessions.length === 0) {
-				ctx.showStatus?.("No recent sessions");
-				return true;
-			}
-			ctx.showStatus?.(sessions.map((item: any, index: number) => `${index + 1}. ${item.title ?? item.sessionId}`).join("\n"));
+			await ctx.showSessionSelector?.();
 			return true;
 		}
 		case "new": {
@@ -77,7 +73,7 @@ async function executeSessionCommand(ctx: any, argsText: string): Promise<boolea
 		}
 		case "switch":
 		case "load": {
-			const target = args[1];
+			const target = await resolveSessionTarget(ctx, args[1]);
 			if (!target) {
 				ctx.showWarning?.(`Usage: /session ${subcommand} <session-id>`);
 				return true;
@@ -119,6 +115,17 @@ async function executeSessionCommand(ctx: any, argsText: string): Promise<boolea
 			ctx.showWarning?.("Usage: /session [list|switch|new|load|current|info|rename|archive|unarchive|delete]");
 			return true;
 	}
+}
+
+async function resolveSessionTarget(ctx: any, rawTarget: string | undefined): Promise<string | undefined> {
+	if (!rawTarget) return undefined;
+	const numeric = Number(rawTarget);
+	if (Number.isInteger(numeric) && numeric >= 1) {
+		const sessions = await ctx.session?.listSessions?.(50);
+		const session = sessions?.[numeric - 1];
+		if (session?.sessionId) return session.sessionId;
+	}
+	return rawTarget;
 }
 
 async function executeModelCommand(ctx: any, argsText: string): Promise<boolean> {

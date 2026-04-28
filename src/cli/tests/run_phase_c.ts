@@ -8,6 +8,7 @@ const bunBin = process.env.BUN_BIN ?? Bun.which("bun") ?? `${process.env.HOME}/.
 const tests = [
   "test_permission_mapper.ts",
   "test_permission_queue.ts",
+  "test_permission_host.ts",
   "test_ask_user_question_permission.ts",
   "test_permission_controller_import.ts",
   "test_acp_permission_response.ts",

@@ -185,4 +185,27 @@ assert(!deleteCalls.includes("delete"), "/session delete without confirm must no
 await executeBuiltinSlashCommand("/session delete confirm", { ctx: deleteCtx });
 assert(deleteCalls.includes("delete"), "/session delete confirm should call the ACP delete path");
 
+const listCalls: string[] = [];
+const listCtx = {
+	session: {
+		listSessions: async () => [
+			{ sessionId: "sess-1", title: "Alpha", cwd: "/repo/a" },
+			{ sessionId: "sess-2", title: "Beta", cwd: "/repo/b" },
+		],
+		loadSession: async (id: string) => {
+			listCalls.push(`load:${id}`);
+			return id;
+		},
+	},
+	showSessionSelector: () => listCalls.push("session-selector"),
+	showStatus: (message: string) => listCalls.push(`status:${message}`),
+	showWarning: (message: string) => listCalls.push(`warning:${message}`),
+	updateEditorTopBorder: () => listCalls.push("top-border"),
+};
+await executeBuiltinSlashCommand("/session list", { ctx: listCtx });
+assert(listCalls.includes("session-selector"), "/session list should open the OMP-backed session selector");
+assert(!listCalls.some(item => item.startsWith("status:") && item.includes("\n")), "/session list must not put multiline output in status");
+await executeBuiltinSlashCommand("/session switch 2", { ctx: listCtx });
+assert(listCalls.includes("load:sess-2"), "/session switch <number> should resolve through the ACP session list");
+
 console.log("PASS: input controller R4");

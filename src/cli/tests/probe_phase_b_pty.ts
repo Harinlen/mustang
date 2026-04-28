@@ -62,6 +62,7 @@ class FakeAcpKernel {
 				return this.#result(ws, id, {
 					sessions: [
 						{ sessionId: "recent-1", title: "Recent session", cwd: process.cwd(), updatedAt: new Date().toISOString() },
+						{ sessionId: "recent-2", title: "Second session", cwd: `${process.cwd()}/src/cli`, updatedAt: new Date().toISOString() },
 					],
 					nextCursor: null,
 				});
@@ -175,6 +176,8 @@ async function main(): Promise<void> {
 			"List, resume, or delete sessions",
 			"PTY_SHELL",
 			"PTY_PY",
+			"Resume Session",
+			"Second session",
 			"success grep",
 			"tool-result-line-12",
 			"Run /session delete confirm",
@@ -262,6 +265,36 @@ def expect(label, needles, timeout=8):
     print(clean(), flush=True)
     cleanup(1)
 
+def expect_order(label, before, after, timeout=8):
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        text = clean()
+        before_index = text.find(before)
+        after_index = text.find(after)
+        if before_index != -1 and after_index != -1 and before_index < after_index:
+            print(f"PTY PASS: {label}", flush=True)
+            return
+        read_for(0.1)
+    print(f"PTY FAIL: {label}; expected {before!r} before {after!r}", flush=True)
+    print(clean(), flush=True)
+    cleanup(1)
+
+def expect_not_after(label, marker, forbidden, timeout=1):
+    read_for(timeout)
+    text = clean()
+    marker_index = text.rfind(marker)
+    if marker_index == -1:
+        print(f"PTY FAIL: {label}; marker {marker!r} not found", flush=True)
+        print(text, flush=True)
+        cleanup(1)
+    tail = text[marker_index:]
+    if forbidden not in tail:
+        print(f"PTY PASS: {label}", flush=True)
+        return
+    print(f"PTY FAIL: {label}; found {forbidden!r} after {marker!r}", flush=True)
+    print(text, flush=True)
+    cleanup(1)
+
 def cleanup(code):
     try:
         os.write(fd, b"\x03\x03")
@@ -283,8 +316,16 @@ send("!echo PTY_SHELL\r")
 expect("bang shell execution", ["$ echo PTY_SHELL", "PTY_SHELL"])
 send('$print("PTY_PY")\r')
 expect("dollar python execution", ["PTY_PY"])
+send("/session list\r")
+expect("session list renders via OMP selector", ["Resume Session", "Second session", "Enter to select"])
+send("\r")
+expect("session selector enter resumes session", ["Resumed session"])
+send("\x1b")
+read_for(0.2)
 send("show tool\r")
 expect("tool rendering collapsed", ["success grep", "tool-result-line-1", "Ctrl+O for more"])
+expect_order("assistant answer follows tool output", "success grep", "tool done")
+expect_not_after("completed tool is not rebuilt as pending after answer", "tool done", "pending grep")
 send("\x0f")
 expect("ctrl-o expands tool output", ["success grep", "tool-result-line-12"])
 send("/session delete")

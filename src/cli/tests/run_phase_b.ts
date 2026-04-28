@@ -9,6 +9,7 @@ const tests = [
 	"test_autocomplete_sort.ts",
 	"test_agent_session_adapter.ts",
 	"test_input_controller_r4.ts",
+	"test_session_selector_omp.ts",
 	"test_status_line.ts",
 	"test_ui_golden_r5.ts",
 ];
@@ -35,6 +36,7 @@ console.log("covered: R1 upstream status line import, R2 ACP event adapter, R3 c
 console.log("covered: slash command names, /session args, /model args, /theme args, prompt-action autocomplete");
 console.log("covered: R4 !/!!/$/$$ routing, mode border transitions, Escape cancel paths, Ctrl+C semantics, /session delete confirm guard");
 console.log("covered: R5 golden frames for welcome, editor/status, autocomplete, no-model warning, assistant/thinking, tool states, permission overlay");
+console.log("covered: OMP-first session selector component and ACP-backed selector rows");
 console.log("covered separately: R6 real CLI PTY/TUI E2E via probe_phase_b_pty.ts");
 console.log("allowlisted: startup selector remains Phase D readline fallback, outside main TUI Phase B gate");
 console.log("allowlisted: heavy OMP selector sub-UIs are stubbed in Mustang ACP mode until their backing services exist");
