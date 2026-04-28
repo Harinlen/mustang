@@ -374,3 +374,28 @@ Implemented the first usable Phase B TUI path for `src/run-cli.sh`.
   the TUI and status returned from `running` to `ready`.
 - PTY probe: type `/`; autocomplete menu opens with `/help`, `/model`,
   `/plan`, etc. Pressing Enter on `/help` renders local command help.
+
+---
+
+## CLI Active-Port Prune
+
+**Date**: 2026-04-29
+**Plan**: [cli-active-port-prune-audit.md](cli-active-port-prune-audit.md)
+
+Applied the active-port prune audit to remove OMP-copied local runtime assets
+from the CLI tree. The CLI keeps the ACP/TUI surface and no longer stores
+prompt markdown under active-port.
+
+### Delivered
+- Deleted `src/cli/src/active-port/coding-agent/prompts/**`.
+- Deleted local edit/export/plugin marketplace/discovery/capability/memory/IPython/STT runtime files listed in the audit.
+- Replaced local plan-approved prompt asset usage with a minimal synthetic message.
+- Promoted terminal-title handling to `src/cli/src/terminal-title.ts`.
+- Disabled local CLI memory/discovery/plugin marketplace operations with kernel-owned messages.
+- Updated `src/cli/active-port-manifest.json` to 243 managed active-port files.
+
+### Verification
+- `cd src/cli && bun run scripts/check_active_port.ts`
+- `cd src/cli && bunx tsc -p tsconfig.json --noEmit`
+- `cd src/cli && bun run tests/run_all.ts`: 4 passed, 0 failed
+- `bun run src/cli/tests/probe_phase_b_pty.ts`: passed

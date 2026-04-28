@@ -13,12 +13,9 @@ import {
 import { Loader, Markdown, padding, Spacer, Text, visibleWidth } from "@/tui/index.js";
 import { formatDuration, Snowflake, setProjectDir } from "@/compat/utils.js";
 import { $ } from "bun";
-import { reset as resetCapabilities } from "../../capability";
-import { clearClaudePluginRootsCache } from "../../discovery/helpers";
 import { loadCustomShare } from "../../export/custom-share";
 import type { CompactOptions } from "../../extensibility/extensions/types";
 import { getGatewayStatus } from "../../ipy/gateway-coordinator";
-import { buildMemoryToolDeveloperInstructions, clearMemoryData, enqueueMemoryConsolidation } from "../../memories";
 import { BashExecutionComponent } from "../../modes/components/bash-execution";
 import { BorderedLoader } from "../../modes/components/bordered-loader";
 import { DynamicBorder } from "../../modes/components/dynamic-border";
@@ -35,7 +32,7 @@ import { replaceTabs } from "../../tools/render-utils";
 import { getChangelogPath, parseChangelog } from "../../utils/changelog";
 import { copyToClipboard } from "../../utils/clipboard";
 import { openPath } from "../../utils/open";
-import { setSessionTerminalTitle } from "../../utils/title-generator";
+import { setSessionTerminalTitle } from "@/terminal-title.js";
 
 function showMarkdownPanel(ctx: InteractiveModeContext, title: string, markdown: string): void {
 	ctx.chatContainer.addChild(new Spacer(1));
@@ -530,48 +527,7 @@ export class CommandController {
 	}
 
 	async handleMemoryCommand(text: string): Promise<void> {
-		const argumentText = text.slice(7).trim();
-		const action = argumentText.split(/\s+/, 1)[0]?.toLowerCase() || "view";
-		const agentDir = this.ctx.settings.getAgentDir();
-
-		if (action === "view") {
-			const payload = await buildMemoryToolDeveloperInstructions(agentDir, this.ctx.settings);
-			if (!payload) {
-				this.ctx.showWarning("Memory payload is empty (memories disabled or no memory summary found).");
-				return;
-			}
-			this.ctx.chatContainer.addChild(new Spacer(1));
-			this.ctx.chatContainer.addChild(new DynamicBorder());
-			this.ctx.chatContainer.addChild(new Text(theme.bold(theme.fg("accent", "Memory Injection Payload")), 1, 0));
-			this.ctx.chatContainer.addChild(new Spacer(1));
-			this.ctx.chatContainer.addChild(new Markdown(payload, 1, 1, getMarkdownTheme()));
-			this.ctx.chatContainer.addChild(new DynamicBorder());
-			this.ctx.ui.requestRender();
-			return;
-		}
-
-		if (action === "reset" || action === "clear") {
-			try {
-				await clearMemoryData(agentDir, this.ctx.sessionManager.getCwd());
-				await this.ctx.session.refreshBaseSystemPrompt();
-				this.ctx.showStatus("Memory data cleared and system prompt refreshed.");
-			} catch (error) {
-				this.ctx.showError(`Memory clear failed: ${error instanceof Error ? error.message : String(error)}`);
-			}
-			return;
-		}
-
-		if (action === "enqueue" || action === "rebuild") {
-			try {
-				enqueueMemoryConsolidation(agentDir, this.ctx.sessionManager.getCwd());
-				this.ctx.showStatus("Memory consolidation enqueued.");
-			} catch (error) {
-				this.ctx.showError(`Memory enqueue failed: ${error instanceof Error ? error.message : String(error)}`);
-			}
-			return;
-		}
-
-		this.ctx.showError("Usage: /memory <view|clear|reset|enqueue|rebuild>");
+		this.ctx.showWarning("Memory is managed by the kernel and is unavailable as a local CLI runtime command.");
 	}
 
 	async handleClearCommand(): Promise<void> {
@@ -675,8 +631,6 @@ export class CommandController {
 			await this.ctx.sessionManager.flush();
 			await this.ctx.sessionManager.moveTo(resolvedPath);
 			setProjectDir(resolvedPath);
-			clearClaudePluginRootsCache(); // re-warms preloadedPluginRoots with new project dir (async)
-			resetCapabilities();
 			await this.ctx.refreshSlashCommandState(resolvedPath);
 
 			this.ctx.statusLine.invalidate();

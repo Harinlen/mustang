@@ -2,7 +2,6 @@
 /**
  * Types for the Extension Control Center dashboard.
  */
-import type { SourceMeta } from "../../../capability/types";
 
 /**
  * Extension kinds matching capability types.
@@ -183,7 +182,7 @@ export function parseExtensionId(id: string): { kind: ExtensionKind; name: strin
 /**
  * Map SourceMeta to extension source shape.
  */
-export function sourceFromMeta(meta: SourceMeta): Extension["source"] {
+export function sourceFromMeta(meta: { provider: string; providerName: string; level: "user" | "project" | "native" }): Extension["source"] {
 	return {
 		provider: meta.provider,
 		providerName: meta.providerName,

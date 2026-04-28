@@ -14,10 +14,13 @@ import {
 	truncateToWidth,
 	visibleWidth,
 } from "@/tui/index.js";
-import { isProviderEnabled } from "../../../discovery";
 import { theme } from "../../../modes/theme/theme";
 import { applyFilter } from "./state-manager";
 import type { Extension, ExtensionKind, ExtensionState } from "./types";
+
+function isProviderEnabled(_providerId: string): boolean {
+	return true;
+}
 
 export interface ExtensionListCallbacks {
 	/** Called when selection changes */

@@ -16,7 +16,7 @@ import {
 } from "@/compat/ai.js";
 import type { Component, SlashCommand } from "@/tui/index.js";
 import { Container, Loader, Markdown, ProcessTerminal, Spacer, Text, TUI, visibleWidth } from "@/tui/index.js";
-import { APP_NAME, getProjectDir, hsvToRgb, isEnoent, logger, postmortem, prompt } from "@/compat/utils.js";
+import { APP_NAME, getProjectDir, hsvToRgb, isEnoent, logger, postmortem } from "@/compat/utils.js";
 import chalk from "chalk";
 import { KeybindingsManager } from "../config/keybindings";
 import { type Settings, settings } from "../config/settings";
@@ -31,7 +31,6 @@ import { BUILTIN_SLASH_COMMANDS, loadSlashCommands } from "../extensibility/slas
 import { resolveLocalUrlToPath } from "../internal-urls";
 import { LSP_STARTUP_EVENT_CHANNEL, type LspStartupEvent } from "../lsp/startup-events";
 import { renameApprovedPlanFile } from "../plan-mode/approved-plan";
-import planModeApprovedPrompt from "../prompts/system/plan-mode-approved.md" with { type: "text" };
 import type { AgentSession, AgentSessionEvent } from "../session/agent-session";
 import { HistoryStorage } from "../session/history-storage";
 import type { SessionContext, SessionManager } from "../session/session-manager";
@@ -42,7 +41,7 @@ import { normalizeLocalScheme } from "../tools/path-utils";
 import type { EventBus } from "../utils/event-bus";
 import { getEditorCommand, openInEditor } from "../utils/external-editor";
 import { getSessionAccentAnsi, getSessionAccentHexForTitle } from "../utils/session-color";
-import { popTerminalTitle, pushTerminalTitle, setSessionTerminalTitle } from "../utils/title-generator";
+import { popTerminalTitle, pushTerminalTitle, setSessionTerminalTitle } from "@/terminal-title.js";
 import type { AssistantMessageComponent } from "./components/assistant-message";
 import type { BashExecutionComponent } from "./components/bash-execution";
 import { CustomEditor } from "./components/custom-editor";
@@ -919,10 +918,15 @@ export class InteractiveMode implements InteractiveModeContext {
 		}
 		this.session.setPlanReferencePath(options.finalPlanFilePath);
 		this.session.markPlanReferenceSent();
-		const planModePrompt = prompt.render(planModeApprovedPrompt, {
+		const planModePrompt = [
+			"Plan approved. Execute it now.",
+			"",
+			`Finalized plan artifact: \`${options.finalPlanFilePath}\``,
+			"",
+			"## Plan",
+			"",
 			planContent,
-			finalPlanFilePath: options.finalPlanFilePath,
-		});
+		].join("\n");
 		await this.session.prompt(planModePrompt, { synthetic: true });
 	}
 

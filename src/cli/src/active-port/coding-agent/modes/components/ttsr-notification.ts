@@ -1,7 +1,12 @@
 // @ts-nocheck
 import { Box, Container, Spacer, Text } from "@/tui/index.js";
-import type { Rule } from "../../capability/rule";
 import { theme } from "../../modes/theme/theme";
+
+interface Rule {
+	name: string;
+	description?: string;
+	content?: string;
+}
 
 /**
  * Component that renders a TTSR (Time Traveling Stream Rules) notification.

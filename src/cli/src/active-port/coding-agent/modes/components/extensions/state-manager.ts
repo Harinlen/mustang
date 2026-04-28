@@ -3,25 +3,7 @@
  * State manager for the Extension Control Center.
  * Handles data loading, tree building, filtering, and toggle persistence.
  */
-import * as path from "node:path";
 import { logger } from "@/compat/utils.js";
-import type { ContextFile } from "../../../capability/context-file";
-import type { ExtensionModule } from "../../../capability/extension-module";
-import type { Hook } from "../../../capability/hook";
-import type { MCPServer } from "../../../capability/mcp";
-import type { Prompt } from "../../../capability/prompt";
-import type { Rule } from "../../../capability/rule";
-import type { Skill } from "../../../capability/skill";
-import type { SlashCommand } from "../../../capability/slash-command";
-import type { CustomTool } from "../../../capability/tool";
-import type { SourceMeta } from "../../../capability/types";
-import {
-	disableProvider,
-	enableProvider,
-	getAllProvidersInfo,
-	isProviderEnabled,
-	loadCapability,
-} from "../../../discovery";
 import type {
 	DashboardState,
 	Extension,
@@ -45,6 +27,7 @@ export interface ExtensionSettingsManager {
  * Load all extensions from all capabilities.
  */
 export async function loadAllExtensions(cwd?: string, disabledIds?: string[]): Promise<Extension[]> {
+	return [];
 	const extensions: Extension[] = [];
 	const disabledExtensions = new Set<string>(disabledIds ?? []);
 
@@ -447,7 +430,6 @@ function getKindDisplayName(kind: ExtensionKind): string {
  * Build provider tabs from extensions.
  */
 export function buildProviderTabs(extensions: Extension[]): ProviderTab[] {
-	const providers = getAllProvidersInfo();
 	const tabs: ProviderTab[] = [];
 
 	// Count extensions per provider
@@ -466,37 +448,6 @@ export function buildProviderTabs(extensions: Extension[]): ProviderTab[] {
 	});
 
 	// Provider tabs (skip native)
-	for (const provider of providers) {
-		if (provider.id === "native") continue;
-		const count = countByProvider.get(provider.id) ?? 0;
-		tabs.push({
-			id: provider.id,
-			label: provider.displayName,
-			enabled: provider.enabled,
-			count,
-		});
-	}
-
-	// Sort: ALL first, then enabled by count, then disabled by count, then empty
-	tabs.sort((a, b) => {
-		if (a.id === "all") return -1;
-		if (b.id === "all") return 1;
-
-		// Categorize: 0 = enabled with content, 1 = disabled, 2 = empty+enabled
-		const category = (t: ProviderTab) => {
-			if (t.count === 0 && t.enabled) return 2; // empty
-			if (!t.enabled) return 1; // disabled
-			return 0; // enabled with content
-		};
-
-		const aCat = category(a);
-		const bCat = category(b);
-		if (aCat !== bCat) return aCat - bCat;
-
-		// Within same category, sort by count descending
-		return b.count - a.count;
-	});
-
 	return tabs;
 }
 
@@ -536,13 +487,7 @@ export async function createInitialState(cwd?: string, disabledIds?: string[]): 
  * Toggle provider enabled state.
  */
 export function toggleProvider(providerId: string): boolean {
-	if (isProviderEnabled(providerId)) {
-		disableProvider(providerId);
-		return false;
-	} else {
-		enableProvider(providerId);
-		return true;
-	}
+	return true;
 }
 
 /**

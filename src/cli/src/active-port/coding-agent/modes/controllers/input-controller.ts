@@ -15,7 +15,7 @@ import { copyToClipboard, readImageFromClipboard } from "../../utils/clipboard";
 import { getEditorCommand, openInEditor } from "../../utils/external-editor";
 import { ensureSupportedImageInput } from "../../utils/image-loading";
 import { resizeImage } from "../../utils/image-resize";
-import { generateSessionTitle, setSessionTerminalTitle } from "../../utils/title-generator";
+import { setSessionTerminalTitle } from "@/terminal-title.js";
 
 interface Expandable {
 	setExpanded(expanded: boolean): void;
@@ -339,22 +339,7 @@ export class InputController {
 			// Generate session title on first message
 			const hasUserMessages = this.ctx.session.messages.some((m: AgentMessage) => m.role === "user");
 			if (!hasUserMessages && !this.ctx.sessionManager.getSessionName() && !$env.PI_NO_TITLE) {
-				const registry = this.ctx.session.modelRegistry;
-				generateSessionTitle(text, registry, this.ctx.settings, this.ctx.session.sessionId, this.ctx.session.model)
-					.then(async title => {
-						if (title) {
-							const applied = await this.ctx.sessionManager.setSessionName(title, "auto");
-							if (applied) {
-								setSessionTerminalTitle(
-									this.ctx.sessionManager.getSessionName()!,
-									this.ctx.sessionManager.getCwd(),
-									this.ctx.sessionManager.titleSource,
-								);
-								this.ctx.updateEditorBorderColor();
-							}
-						}
-					})
-					.catch(() => {});
+				setSessionTerminalTitle(undefined, this.ctx.sessionManager.getCwd(), this.ctx.sessionManager.titleSource);
 			}
 
 			if (this.ctx.onInputCallback) {

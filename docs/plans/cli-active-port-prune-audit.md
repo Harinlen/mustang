@@ -1,7 +1,22 @@
 # CLI Active-Port Prune Audit
 
-Status: draft audit; first import-namespace correction applied
+Status: prune applied; active-port runtime assets removed
 Date: 2026-04-29
+
+Applied: 2026-04-29
+
+Result:
+
+- Removed CLI-owned prompt markdown from `src/cli/src/active-port/coding-agent/prompts/`.
+- Removed local edit/export/plugin/discovery/capability/memory/IPython/STT/runtime assets
+  identified by this audit.
+- Kept only renderer/UI-facing stubs where the active-port TUI still expects a
+  shape, with local runtime behavior disabled or redirected to kernel-owned
+  responsibility.
+- Reduced `src/cli/active-port-manifest.json` to 243 registered files.
+- Verification: `bun run scripts/check_active_port.ts`, `bunx tsc -p
+  tsconfig.json --noEmit`, `bun run tests/run_all.ts`, and `bun run
+  src/cli/tests/probe_phase_b_pty.ts` all passed.
 
 ## Goal
 
