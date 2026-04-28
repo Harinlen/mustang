@@ -14,6 +14,7 @@ interface Manifest {
   managedRoots: string[];
   bulkVendorDenylist: string[];
   ports: PortEntry[];
+  localAssets?: string[];
 }
 
 const cliRoot = resolve(import.meta.dir, "..");
@@ -60,6 +61,9 @@ function assertManifestShape(raw: unknown): Manifest {
   assert(Array.isArray(raw.managedRoots), "managedRoots must be an array");
   assert(Array.isArray(raw.bulkVendorDenylist), "bulkVendorDenylist must be an array");
   assert(Array.isArray(raw.ports), "ports must be an array");
+  if (raw.localAssets !== undefined) {
+    assert(Array.isArray(raw.localAssets), "localAssets must be an array when present");
+  }
 
   for (const root of raw.managedRoots) {
     assert(typeof root === "string", "managedRoots entries must be strings");
@@ -78,6 +82,11 @@ function assertManifestShape(raw: unknown): Manifest {
     assert(typeof entry.phase === "string", "port.phase must be a string");
     assertRelativePath(entry.upstream, "port.upstream");
     assertRelativePath(entry.target, "port.target");
+  }
+
+  for (const asset of raw.localAssets ?? []) {
+    assert(typeof asset === "string", "localAssets entries must be strings");
+    assertRelativePath(asset, "localAssets entry");
   }
 
   return raw as unknown as Manifest;
@@ -159,7 +168,21 @@ function collectFiles(root: string): string[] {
 }
 
 function checkNoUnregisteredManagedFiles(manifest: Manifest): void {
-  const registered = new Set(manifest.ports.map(entry => resolve(repoRoot, entry.target)));
+  const registered = new Set([
+    ...manifest.ports.map(entry => resolve(repoRoot, entry.target)),
+    ...(manifest.localAssets ?? []).map(asset => resolve(repoRoot, asset)),
+  ]);
+  const managedRoots = manifest.managedRoots.map((root) => resolve(repoRoot, root));
+  for (const asset of manifest.localAssets ?? []) {
+    const absolute = resolve(repoRoot, asset);
+    assert(isInside(absolute, cliRoot), `localAssets entry must stay inside src/cli: ${asset}`);
+    assert(
+      managedRoots.some((root) => isInside(absolute, root)),
+      `localAssets entry must live under a managedRoot: ${asset}`,
+    );
+    assert(existsSync(absolute), `localAssets entry does not exist: ${asset}`);
+    assert(statSync(absolute).isFile(), `localAssets entry must be a file: ${asset}`);
+  }
   for (const root of manifest.managedRoots) {
     const absoluteRoot = resolve(repoRoot, root);
     for (const file of collectFiles(absoluteRoot)) {

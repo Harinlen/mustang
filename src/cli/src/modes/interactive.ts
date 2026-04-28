@@ -25,10 +25,53 @@ import { PermissionController } from "@/permissions/controller.js";
 
 type ContentBlock = { type?: string; text?: string; data?: string; mimeType?: string };
 
+type StatusLineView = {
+  setMode(mode: string): void;
+  setTitle(title: string): void;
+  render(width: number): string[];
+  invalidate(): void;
+};
+
+type AssistantMessageView = {
+  updateContent(message: { role: "assistant"; content: Array<{ type: "thinking"; thinking: string } | { type: "text"; text: string }> }): void;
+  render(width: number): string[];
+  invalidate(): void;
+};
+
+type ToolExecutionView = {
+  setExpanded(expanded: boolean): void;
+  updateResult(
+    result: {
+      content: Array<{ type: string; text?: string; data?: string; mimeType?: string }>;
+      details?: { locations?: unknown };
+      isError?: boolean;
+    },
+    isPartial?: boolean,
+    toolCallId?: string,
+  ): void;
+  render(width: number): string[];
+  invalidate(): void;
+};
+
 type ToolHandle = {
-  component: ToolExecutionComponent;
+  component: ToolExecutionView;
   title: string;
 };
+
+const StatusLineCtor = StatusLineComponent as unknown as new (session?: unknown) => StatusLineView;
+const AssistantMessageCtor = AssistantMessageComponent as unknown as new (
+  message?: unknown,
+  hideThinkingBlock?: boolean,
+) => AssistantMessageView;
+const ToolExecutionCtor = ToolExecutionComponent as unknown as new (
+  toolName: string,
+  args: Record<string, unknown>,
+  options: Record<string, unknown>,
+  tool: Record<string, unknown>,
+  tui: TUI,
+  cwd: string,
+  toolCallId: string,
+) => ToolExecutionView;
 
 const BUILTIN_COMMANDS: AutocompleteItem[] = [
   { value: "help", label: "/help", description: "Show available commands" },
@@ -80,7 +123,7 @@ export class InteractiveMode {
   private readonly tui = new TUI(new ProcessTerminal(), true);
   private readonly root = new Container();
   private readonly chat = new Container();
-  private readonly statusLine: StatusLineComponent;
+  private readonly statusLine: StatusLineView;
   private readonly permissionController: PermissionController;
   private readonly keybindings = KeybindingsManager.inMemory();
   private editor!: Editor;
@@ -88,7 +131,7 @@ export class InteractiveMode {
   private readonly toolExecutions = new Map<string, ToolHandle>();
   private commands: AutocompleteItem[] = sortCommandsByLabel(BUILTIN_COMMANDS);
   private toolOutputExpanded = false;
-  private currentMessage: AssistantMessageComponent | null = null;
+  private currentMessage: AssistantMessageView | null = null;
   private currentText = "";
   private currentThinking = "";
   private busy = false;
@@ -101,7 +144,7 @@ export class InteractiveMode {
     private readonly session: MustangSession,
     private readonly options: { model?: string; provider?: string } = {},
   ) {
-    this.statusLine = new StatusLineComponent({
+    this.statusLine = new StatusLineCtor({
       id: session.sessionId,
       title: session.sessionId,
       agent: { model: { id: options.model ?? "" } },
@@ -266,7 +309,7 @@ export class InteractiveMode {
 
   private ensureAssistantMessage(): void {
     if (this.currentMessage) return;
-    this.currentMessage = new AssistantMessageComponent(undefined, false);
+    this.currentMessage = new AssistantMessageCtor(undefined, false);
     this.chat.addChild(this.currentMessage);
   }
 
@@ -283,7 +326,7 @@ export class InteractiveMode {
     const title = String(update.title ?? "tool");
     const rawInput = typeof update.rawInput === "string" ? update.rawInput : typeof update.raw_input === "string" ? update.raw_input : "";
     const args = parseJsonObject(rawInput) ?? {};
-    const component = new ToolExecutionComponent(
+    const component = new ToolExecutionCtor(
       title,
       args,
       {},

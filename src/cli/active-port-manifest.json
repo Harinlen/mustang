@@ -11,6 +11,9 @@
     "src/cli/oh-my-pi",
     "src/cli/packages"
   ],
+  "localAssets": [
+    "src/cli/src/active-port/coding-agent/modes/components/welcome-logo.txt"
+  ],
   "ports": [
     {
       "upstream": "packages/coding-agent/src/config/keybindings.ts",
