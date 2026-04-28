@@ -82,9 +82,7 @@ Protocol 层：两套 stack 都已在 `kernel.routes.stack.create_stack`
 |---|---|
 | [cli/README.md](cli/README.md) | CLI 文档索引、当前状态、工作分类 |
 | [cli/design.md](cli/design.md) | CLI 客户端设计文档：ACP 边界、TUI active-port、运行时约束 |
-| [cli/roadmap.md](cli/roadmap.md) | CLI 阶段计划与后续 reconnect 等未完成工作 |
-| [cli/plans/](cli/plans/) | 已实现/历史 CLI 计划，保留用于追溯实现决策 |
-| [cli/audits/](cli/audits/) | CLI active-port prune、keybinding parity 等调查/审计文档 |
+| [cli/history/](cli/history/) | 已实现/历史 CLI 记录，保留用于追溯实现决策 |
 
 ### ACP 规范镜像
 
@@ -121,7 +119,8 @@ Protocol 层：两套 stack 都已在 `kernel.routes.stack.create_stack`
 | **Post-impl checklist** | `workflow/code-quality.md` | After writing any code |
 | **Full-repo audit** | `workflow/code-review.md` | When user says "Code Review" |
 | **Future phases** | `plans/roadmap.md` | Planning what's next |
-| **CLI docs** | [`cli/README.md`](cli/README.md) | CLI design, roadmap, implemented plans, audits |
+| **CLI pending work** | [`plans/cli-plan.md`](plans/cli-plan.md) | CLI future work, reconnect, audits |
+| **CLI docs** | [`cli/README.md`](cli/README.md) | CLI implemented design facts and history |
 | **Session ACP compliance refactor** | [`plans/session-acp-compliance-refactor.md`](plans/session-acp-compliance-refactor.md) | Kernel Session refactor for ACP `SessionInfo`, config options, modes, MCP session setup, cancellation, lifecycle actions |
 | **Session lifecycle actions** | [`plans/session-lifecycle-actions.md`](plans/session-lifecycle-actions.md) | Kernel plan for user-visible session delete, rename, archive/unarchive ACP methods |
 | **Backlog** | `plans/backlog.md` | Deferred features from design docs |

@@ -1,6 +1,6 @@
 # CLI `!` / `$` Kernel REPL 迁移计划
 
-**父计划**: [`../roadmap.md`](../roadmap.md)
+**父计划**: [`../../plans/cli-plan.md`](../../plans/cli-plan.md)
 **范围**: `src/kernel/` + `src/cli/`
 **状态**: implemented
 **目标**: 完整复制 oh-my-pi 的 `!` shell command mode 与 `$` python mode 行为，但执行必须发生在 kernel 侧。

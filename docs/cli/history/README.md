@@ -1,9 +1,8 @@
-# CLI Plans
+# CLI History
 
-This folder keeps CLI implementation plans after they leave the global
-`docs/plans/` queue. Most files here are implemented history; keep them because
-they document active-port decisions, OMP baseline assumptions, verification
-commands, and ACP boundary choices.
+This folder keeps implemented CLI work records. They are not active plans;
+they document shipped active-port decisions, OMP baseline assumptions,
+verification commands, and ACP boundary choices.
 
 | Plan | Status |
 |---|---|
@@ -14,5 +13,4 @@ commands, and ACP boundary choices.
 | [kernel-repl-bang-dollar.md](kernel-repl-bang-dollar.md) | implemented |
 | [omp-first-refactor.md](omp-first-refactor.md) | implemented |
 
-For new investigations, prefer `../audits/` until the work becomes an
-implementation plan.
+New or unfinished work belongs under `../../plans/`, not here.
