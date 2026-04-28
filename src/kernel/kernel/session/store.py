@@ -165,20 +165,45 @@ class SessionStore:
                     .values(**values)
                 )
 
-    async def update_title(self, session_id: str, title: str) -> None:
+    async def update_title(
+        self, session_id: str, title: str, *, title_source: str | None = None
+    ) -> None:
         """Set the session title.
 
         Args:
             session_id: Target session.
             title: New title string.
+            title_source: Optional source marker (``auto`` or ``user``).
         """
         assert self._factory is not None, "SessionStore.open() not called"
+        values: dict[str, object] = {"title": title, "modified": _now_iso()}
+        if title_source is not None:
+            values["title_source"] = title_source
         async with self._factory() as db, db.begin():
             await db.execute(
                 sa.update(ConversationRecord)
                 .where(ConversationRecord.session_id == session_id)
-                .values(title=title, modified=_now_iso())
+                .values(**values)
             )
+
+    async def archive_session(self, session_id: str, archived_at: str | None) -> bool:
+        """Set or clear a session archive timestamp.
+
+        Args:
+            session_id: Target session.
+            archived_at: ISO timestamp when archiving, ``None`` when restoring.
+
+        Returns:
+            ``True`` when a row existed and was updated.
+        """
+        assert self._factory is not None, "SessionStore.open() not called"
+        async with self._factory() as db, db.begin():
+            result = await db.execute(
+                sa.update(ConversationRecord)
+                .where(ConversationRecord.session_id == session_id)
+                .values(archived_at=archived_at, modified=_now_iso())
+            )
+            return bool(result.rowcount)
 
     async def delete_session(self, session_id: str) -> bool:
         """Delete events then the session row in one atomic transaction.
@@ -235,7 +260,9 @@ class SessionStore:
                 logger.warning("session=%s: malformed event row — skipping", session_id)
         return result
 
-    async def list_sessions(self) -> list[ConversationRecord]:
+    async def list_sessions(
+        self, *, include_archived: bool = False, archived_only: bool = False
+    ) -> list[ConversationRecord]:
         """Return all sessions ordered by ``modified`` DESC.
 
         Objects are detached from the SQLAlchemy session on return (the
@@ -246,7 +273,12 @@ class SessionStore:
             List of ``ConversationRecord`` objects, most-recent first.
         """
         assert self._factory is not None, "SessionStore.open() not called"
-        stmt = sa.select(ConversationRecord).order_by(ConversationRecord.modified.desc())
+        stmt = sa.select(ConversationRecord)
+        if archived_only:
+            stmt = stmt.where(ConversationRecord.archived_at.is_not(None))
+        elif not include_archived:
+            stmt = stmt.where(ConversationRecord.archived_at.is_(None))
+        stmt = stmt.order_by(ConversationRecord.modified.desc())
         async with self._factory() as db:
             return list((await db.execute(stmt)).scalars().all())
 

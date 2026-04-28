@@ -15,3 +15,9 @@ class ListSessionsParams(BaseModel):
     cwd: str | None = None
     """Optional filter: only return sessions whose ``cwd`` matches
     this absolute path."""
+
+    include_archived: bool = False
+    """When true, include archived sessions in the result."""
+
+    archived_only: bool = False
+    """When true, return only archived sessions."""

@@ -256,6 +256,17 @@ async def test_update_title_overwrites(store: SessionStore) -> None:
     assert fetched.title == "Updated"
 
 
+async def test_update_title_sets_title_source(store: SessionStore) -> None:
+    sid = _sid()
+    await store.create_session_with_events(_make_record(sid), [_make_created_event(sid)])
+
+    await store.update_title(sid, "User title", title_source="user")
+
+    fetched = await store.get_session(sid)
+    assert fetched is not None
+    assert fetched.title_source == "user"
+
+
 # ---------------------------------------------------------------------------
 # read_events — ordering
 # ---------------------------------------------------------------------------
@@ -314,6 +325,23 @@ async def test_list_sessions_sorted_by_modified_desc(store: SessionStore) -> Non
 async def test_list_sessions_empty(store: SessionStore) -> None:
     records = await store.list_sessions()
     assert records == []
+
+
+async def test_list_sessions_filters_archived(store: SessionStore) -> None:
+    active, archived = _sid(), _sid()
+    await store.create_session_with_events(_make_record(active), [_make_created_event(active)])
+    await store.create_session_with_events(_make_record(archived), [_make_created_event(archived)])
+    await store.archive_session(archived, "2026-04-28T00:00:00+00:00")
+
+    default_ids = [record.session_id for record in await store.list_sessions()]
+    include_ids = [record.session_id for record in await store.list_sessions(include_archived=True)]
+    archived_ids = [record.session_id for record in await store.list_sessions(archived_only=True)]
+
+    assert active in default_ids
+    assert archived not in default_ids
+    assert active in include_ids
+    assert archived in include_ids
+    assert archived_ids == [archived]
 
 
 # ---------------------------------------------------------------------------

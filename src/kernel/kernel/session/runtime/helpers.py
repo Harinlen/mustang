@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any, Literal
 
 from kernel.orchestrator.types import StopReason as OrchestratorStopReason
+from kernel.session.runtime.config_options import config_descriptor_dicts
 
 logger = logging.getLogger(__name__)
 
@@ -65,7 +66,7 @@ def decode_cursor(token: str) -> tuple[str, str]:
 
 def config_list(options: dict[str, Any]) -> list[dict[str, Any]]:
     """Return ACP config option list shape from a full-state mapping."""
-    return [{"config_id": k, "value": v} for k, v in options.items()]
+    return config_descriptor_dicts(options)
 
 
 def make_summarise_closure(llm_manager: Any) -> Callable[[str, str], Awaitable[str]] | None:

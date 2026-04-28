@@ -16,8 +16,12 @@ from __future__ import annotations
 
 from typing import Protocol, runtime_checkable
 
+from kernel.protocol.interfaces.contracts.archive_session_params import ArchiveSessionParams
+from kernel.protocol.interfaces.contracts.archive_session_result import ArchiveSessionResult
 from kernel.protocol.interfaces.contracts.cancel_params import CancelParams
 from kernel.protocol.interfaces.contracts.cancel_execution_params import CancelExecutionParams
+from kernel.protocol.interfaces.contracts.delete_session_params import DeleteSessionParams
+from kernel.protocol.interfaces.contracts.delete_session_result import DeleteSessionResult
 from kernel.protocol.interfaces.contracts.execute_python_params import ExecutePythonParams
 from kernel.protocol.interfaces.contracts.execute_shell_params import ExecuteShellParams
 from kernel.protocol.interfaces.contracts.execution_result import ExecutionResult
@@ -42,6 +46,8 @@ from kernel.protocol.interfaces.contracts.new_session_result import (
 )
 from kernel.protocol.interfaces.contracts.prompt_params import PromptParams
 from kernel.protocol.interfaces.contracts.prompt_result import PromptResult
+from kernel.protocol.interfaces.contracts.rename_session_params import RenameSessionParams
+from kernel.protocol.interfaces.contracts.rename_session_result import RenameSessionResult
 from kernel.protocol.interfaces.contracts.set_config_option_params import (
     SetConfigOptionParams,
 )
@@ -93,9 +99,7 @@ class SessionHandler(Protocol):
         """Execute user-triggered Python code for a session."""
         ...
 
-    async def cancel_execution(
-        self, ctx: HandlerContext, params: CancelExecutionParams
-    ) -> None:
+    async def cancel_execution(self, ctx: HandlerContext, params: CancelExecutionParams) -> None:
         """Cancel in-flight user REPL execution for a session."""
         ...
 
@@ -107,6 +111,24 @@ class SessionHandler(Protocol):
         self, ctx: HandlerContext, params: SetConfigOptionParams
     ) -> SetConfigOptionResult:
         """Update a session configuration option and return full config state."""
+        ...
+
+    async def rename_session(
+        self, ctx: HandlerContext, params: RenameSessionParams
+    ) -> RenameSessionResult:
+        """Rename a session and return its updated summary."""
+        ...
+
+    async def archive_session(
+        self, ctx: HandlerContext, params: ArchiveSessionParams
+    ) -> ArchiveSessionResult:
+        """Archive or unarchive a session and return its updated summary."""
+        ...
+
+    async def delete_session(
+        self, ctx: HandlerContext, params: DeleteSessionParams
+    ) -> DeleteSessionResult:
+        """Permanently delete a session."""
         ...
 
     async def cancel(self, ctx: HandlerContext, params: CancelParams) -> None:

@@ -9,12 +9,16 @@ gateway callers but lets long-running kernels avoid unbounded memory.
 from __future__ import annotations
 
 import logging
+import shutil
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from kernel.protocol.interfaces.errors import ResourceNotFoundError
+from kernel.protocol.interfaces.contracts.delete_session_params import DeleteSessionParams
+from kernel.protocol.interfaces.contracts.delete_session_result import DeleteSessionResult
+from kernel.protocol.interfaces.contracts.handler_context import HandlerContext
+from kernel.protocol.interfaces.errors import InvalidRequest, ResourceNotFoundError
 from kernel.session._shared.base import _SessionMixinBase
 from kernel.session.events import KERNEL_VERSION, SessionCreatedEvent
 from kernel.session.models import ConversationRecord
@@ -182,29 +186,62 @@ class SessionLifecycleMixin(_SessionMixinBase):
             await self._close_runtime(session, quiet=False)
             self._sessions.pop(session.session_id, None)
 
-    async def delete_session(self, session_id: str) -> bool:
-        """Permanently delete a session from memory and the DB.
+    async def delete_session(
+        self,
+        ctx_or_session_id: HandlerContext | str,
+        params: DeleteSessionParams | None = None,
+    ) -> DeleteSessionResult | bool:
+        """Permanently delete a session from memory, DB, and sidecars.
 
-        Used by CronScheduler's session reaper to clean up expired cron
-        execution sessions.
+        The legacy ``delete_session(session_id: str) -> bool`` form is kept
+        for CronScheduler.  ACP calls use
+        ``delete_session(ctx, DeleteSessionParams(...))`` and return a typed
+        result object.
 
         Args:
-            session_id: Session to remove.
+            ctx_or_session_id: Either a session id (legacy internal call) or
+                the handler context for an ACP request.
+            params: ACP delete params when called through the protocol layer.
 
         Returns:
-            ``True`` if the row was deleted, ``False`` if the session was
-            not found in the DB.
+            ``bool`` for legacy callers, ``DeleteSessionResult`` for ACP.
         """
+        if isinstance(ctx_or_session_id, str):
+            deleted = await self._delete_session_by_id(ctx_or_session_id, force=True)
+            return deleted
+
+        assert params is not None, "DeleteSessionParams required for ACP delete"
+        deleted = await self._delete_session_by_id(
+            params.session_id,
+            force=params.force,
+            connection_session_id=ctx_or_session_id.conn.bound_session_id,
+        )
+        return DeleteSessionResult(deleted=deleted)
+
+    async def _delete_session_by_id(
+        self,
+        session_id: str,
+        *,
+        force: bool,
+        connection_session_id: str | None = None,
+    ) -> bool:
         session = self._sessions.get(session_id)
         if session is not None:
+            active = bool(session.senders or session.in_flight_turn is not None or session.queue)
+            deleting_bound_session = connection_session_id == session_id
+            if (active or deleting_bound_session) and not force:
+                raise InvalidRequest("session/delete requires force=true for active sessions")
             await self._close_runtime(session, quiet=True)
             self._sessions.pop(session_id, None)
 
         try:
-            return await self._store.delete_session(session_id)
+            deleted = await self._store.delete_session(session_id)
         except Exception:
             logger.debug("delete_session(%s) — not found in DB", session_id)
             return False
+        if deleted:
+            shutil.rmtree(self._store.aux_dir(session_id), ignore_errors=True)
+        return deleted
 
     def _get_or_raise(self, session_id: str) -> Session:
         """Return the in-memory session, raising if it has been evicted.

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from typing import Any
+from typing import Literal
 
 from kernel.protocol.acp.schemas.base import AcpModel
 from kernel.protocol.acp.schemas.content import AcpContentBlock
@@ -22,8 +23,11 @@ class AcpMcpServer(AcpModel):
 class AcpSessionInfo(AcpModel):
     session_id: str
     cwd: str
-    created_at: str
+    updated_at: str
     title: str | None = None
+    archived_at: str | None = None
+    title_source: Literal["auto", "user"] | None = None
+    meta: dict[str, Any] | None = None
 
 
 # session/new
@@ -64,6 +68,8 @@ class LoadSessionResponse(AcpModel):
 class ListSessionsRequest(AcpModel):
     cursor: str | None = None
     cwd: str | None = None
+    include_archived: bool = False
+    archived_only: bool = False
     meta: dict[str, Any] | None = None
 
 
@@ -142,6 +148,11 @@ class CancelNotification(AcpModel):
     meta: dict[str, Any] | None = None
 
 
+class CancelRequestNotification(AcpModel):
+    request_id: str | int
+    meta: dict[str, Any] | None = None
+
+
 # session/set_mode
 
 
@@ -167,4 +178,46 @@ class SetSessionConfigOptionRequest(AcpModel):
 
 class SetSessionConfigOptionResponse(AcpModel):
     config_options: list[dict]
+    meta: dict[str, Any] | None = None
+
+
+# session/rename
+
+
+class RenameSessionRequest(AcpModel):
+    session_id: str
+    title: str
+    meta: dict[str, Any] | None = None
+
+
+class RenameSessionResponse(AcpModel):
+    session: AcpSessionInfo
+    meta: dict[str, Any] | None = None
+
+
+# session/archive
+
+
+class ArchiveSessionRequest(AcpModel):
+    session_id: str
+    archived: bool = True
+    meta: dict[str, Any] | None = None
+
+
+class ArchiveSessionResponse(AcpModel):
+    session: AcpSessionInfo
+    meta: dict[str, Any] | None = None
+
+
+# session/delete
+
+
+class DeleteSessionRequest(AcpModel):
+    session_id: str
+    force: bool = False
+    meta: dict[str, Any] | None = None
+
+
+class DeleteSessionResponse(AcpModel):
+    deleted: bool
     meta: dict[str, Any] | None = None

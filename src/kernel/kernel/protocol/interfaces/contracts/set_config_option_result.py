@@ -4,12 +4,7 @@ from __future__ import annotations
 
 from pydantic import BaseModel
 
-
-class ConfigOptionValue(BaseModel):
-    """A single config option with its current value."""
-
-    config_id: str
-    value: str
+from kernel.protocol.interfaces.contracts.session_config import ConfigOptionDescriptor
 
 
 class SetConfigOptionResult(BaseModel):
@@ -19,4 +14,4 @@ class SetConfigOptionResult(BaseModel):
     and their current values (not just the changed one).
     """
 
-    config_options: list[ConfigOptionValue]
+    config_options: list[ConfigOptionDescriptor]

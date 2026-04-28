@@ -23,10 +23,15 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from kernel.protocol.interfaces.contracts.handler_context import HandlerContext
+from kernel.protocol.interfaces.contracts.archive_session_params import ArchiveSessionParams
+from kernel.protocol.interfaces.contracts.delete_session_params import DeleteSessionParams
 from kernel.protocol.interfaces.contracts.list_sessions_params import ListSessionsParams
 from kernel.protocol.interfaces.contracts.load_session_params import LoadSessionParams
 from kernel.protocol.interfaces.contracts.new_session_params import NewSessionParams
-from kernel.protocol.interfaces.errors import ResourceNotFoundError
+from kernel.protocol.interfaces.contracts.rename_session_params import RenameSessionParams
+from kernel.protocol.interfaces.contracts.set_config_option_params import SetConfigOptionParams
+from kernel.protocol.interfaces.contracts.set_mode_params import SetModeParams
+from kernel.protocol.interfaces.errors import InvalidParams, InvalidRequest, ResourceNotFoundError
 from kernel.session import SessionManager
 from kernel.session.store import SessionStore
 
@@ -143,6 +148,33 @@ async def test_new_registers_in_memory_session(manager: SessionManager, tmp_path
     assert result.session_id in manager._sessions
 
 
+async def test_new_returns_initial_mode_and_config(manager: SessionManager, tmp_path: Path) -> None:
+    result = await manager.new(_make_ctx(), NewSessionParams(cwd=str(tmp_path)))
+
+    assert result.modes is not None
+    assert result.modes.current_mode_id == "default"
+    assert result.config_options[0].config_id == "mode"
+    assert result.config_options[0].current_value == "default"
+
+
+async def test_new_rejects_relative_cwd(manager: SessionManager) -> None:
+    with pytest.raises(InvalidParams):
+        await manager.new(_make_ctx(), NewSessionParams(cwd="relative/path"))
+
+
+async def test_new_rejects_session_scoped_mcp_servers(
+    manager: SessionManager, tmp_path: Path
+) -> None:
+    with pytest.raises(InvalidParams):
+        await manager.new(
+            _make_ctx(),
+            NewSessionParams(
+                cwd=str(tmp_path),
+                mcp_servers=[{"name": "local", "command": "echo"}],
+            ),
+        )
+
+
 async def test_delete_session_reports_existing_row(manager: SessionManager, tmp_path: Path) -> None:
     ctx = _make_ctx()
     result = await manager.new(ctx, NewSessionParams(cwd=str(tmp_path)))
@@ -154,6 +186,38 @@ async def test_delete_session_reports_existing_row(manager: SessionManager, tmp_
 async def test_delete_session_reports_missing_row(manager: SessionManager) -> None:
     """Cron reaper relies on this bool to avoid repeated fake delete counts."""
     assert await manager.delete_session(str(uuid.uuid4())) is False
+
+
+async def test_delete_session_rejects_active_without_force(
+    manager: SessionManager, tmp_path: Path
+) -> None:
+    ctx = _make_ctx()
+    result = await manager.new(ctx, NewSessionParams(cwd=str(tmp_path)))
+
+    with pytest.raises(InvalidRequest):
+        await manager.delete_session(
+            ctx,
+            DeleteSessionParams(session_id=result.session_id, force=False),
+        )
+
+
+async def test_delete_session_force_removes_sidecars(
+    manager: SessionManager, tmp_path: Path
+) -> None:
+    ctx = _make_ctx()
+    result = await manager.new(ctx, NewSessionParams(cwd=str(tmp_path)))
+    aux_dir = manager._store.aux_dir(result.session_id)
+    aux_dir.mkdir(parents=True, exist_ok=True)
+    (aux_dir / "note.txt").write_text("temp", encoding="utf-8")
+
+    delete_result = await manager.delete_session(
+        ctx,
+        DeleteSessionParams(session_id=result.session_id, force=True),
+    )
+
+    assert delete_result.deleted is True
+    assert await manager._store.get_session(result.session_id) is None
+    assert not aux_dir.exists()
 
 
 # ---------------------------------------------------------------------------
@@ -187,6 +251,58 @@ async def test_list_filters_by_cwd(manager: SessionManager, tmp_path: Path) -> N
     assert r_b.session_id not in ids
 
 
+async def test_list_rejects_relative_cwd(manager: SessionManager) -> None:
+    with pytest.raises(InvalidParams):
+        await manager.list(_make_ctx(), ListSessionsParams(cwd="relative/path"))
+
+
+async def test_list_rejects_invalid_cursor(manager: SessionManager) -> None:
+    with pytest.raises(InvalidParams):
+        await manager.list(_make_ctx(), ListSessionsParams(cursor="not-a-cursor"))
+
+
+async def test_archive_hides_session_from_default_list(
+    manager: SessionManager, tmp_path: Path
+) -> None:
+    result = await manager.new(_make_ctx(), NewSessionParams(cwd=str(tmp_path)))
+
+    archive_result = await manager.archive_session(
+        _make_ctx(),
+        ArchiveSessionParams(session_id=result.session_id, archived=True),
+    )
+
+    assert archive_result.archived_at is not None
+    default_ids = [
+        summary.session_id
+        for summary in (await manager.list(_make_ctx(), ListSessionsParams())).sessions
+    ]
+    archived_ids = [
+        summary.session_id
+        for summary in (
+            await manager.list(_make_ctx(), ListSessionsParams(archived_only=True))
+        ).sessions
+    ]
+    assert result.session_id not in default_ids
+    assert result.session_id in archived_ids
+
+
+async def test_rename_session_sets_user_title_source(
+    manager: SessionManager, tmp_path: Path
+) -> None:
+    result = await manager.new(_make_ctx(), NewSessionParams(cwd=str(tmp_path)))
+
+    renamed = await manager.rename_session(
+        _make_ctx(),
+        RenameSessionParams(session_id=result.session_id, title="  User title  "),
+    )
+
+    assert renamed.title == "User title"
+    assert renamed.title_source == "user"
+    record = await manager._store.get_session(result.session_id)
+    assert record is not None
+    assert record.title_source == "user"
+
+
 # ---------------------------------------------------------------------------
 # load_session()
 # ---------------------------------------------------------------------------
@@ -217,6 +333,75 @@ async def test_load_session_evicted_and_reloaded(manager: SessionManager, tmp_pa
     )
     assert load_result is not None
     assert sid in manager._sessions
+    assert load_result.modes is not None
+
+
+async def test_load_session_rejects_relative_cwd(manager: SessionManager, tmp_path: Path) -> None:
+    result = await manager.new(_make_ctx(), NewSessionParams(cwd=str(tmp_path)))
+
+    with pytest.raises(InvalidParams):
+        await manager.load_session(
+            _make_ctx("conn-2"),
+            LoadSessionParams(session_id=result.session_id, cwd="relative/path"),
+        )
+
+
+async def test_load_session_rejects_session_scoped_mcp_servers(
+    manager: SessionManager, tmp_path: Path
+) -> None:
+    result = await manager.new(_make_ctx(), NewSessionParams(cwd=str(tmp_path)))
+
+    with pytest.raises(InvalidParams):
+        await manager.load_session(
+            _make_ctx("conn-2"),
+            LoadSessionParams(
+                session_id=result.session_id,
+                cwd=str(tmp_path),
+                mcp_servers=[{"name": "local", "command": "echo"}],
+            ),
+        )
+
+
+# ---------------------------------------------------------------------------
+# mode/config options
+# ---------------------------------------------------------------------------
+
+
+async def test_set_mode_updates_config_snapshot(manager: SessionManager, tmp_path: Path) -> None:
+    result = await manager.new(_make_ctx(), NewSessionParams(cwd=str(tmp_path)))
+    session = manager._sessions[result.session_id]
+
+    await manager.set_mode(_make_ctx(), SetModeParams(session_id=result.session_id, mode_id="plan"))
+
+    assert session.mode_id == "plan"
+    assert session.config_options["mode"] == "plan"
+    session.orchestrator.set_mode.assert_called_with("plan")
+
+
+async def test_set_config_option_mode_returns_full_descriptor(
+    manager: SessionManager, tmp_path: Path
+) -> None:
+    result = await manager.new(_make_ctx(), NewSessionParams(cwd=str(tmp_path)))
+
+    update = await manager.set_config_option(
+        _make_ctx(),
+        SetConfigOptionParams(session_id=result.session_id, config_id="mode", value="plan"),
+    )
+
+    assert update.config_options[0].config_id == "mode"
+    assert update.config_options[0].current_value == "plan"
+
+
+async def test_set_config_option_rejects_unknown_option(
+    manager: SessionManager, tmp_path: Path
+) -> None:
+    result = await manager.new(_make_ctx(), NewSessionParams(cwd=str(tmp_path)))
+
+    with pytest.raises(InvalidParams):
+        await manager.set_config_option(
+            _make_ctx(),
+            SetConfigOptionParams(session_id=result.session_id, config_id="thinking", value="true"),
+        )
 
 
 # ---------------------------------------------------------------------------

@@ -87,6 +87,7 @@ class ConfigOptionUpdate(AcpModel):
 class SessionInfoUpdate(AcpModel):
     session_update: Literal["session_info_update"] = "session_info_update"
     title: str | None = None
+    updated_at: str | None = None
     meta: dict[str, Any] | None = None
 
 

@@ -181,7 +181,9 @@ class SessionReplayMixin(_SessionMixinBase):
             await _notify(ConfigOptionUpdate(config_options=_config_list(event.full_state)))
 
         elif isinstance(event, SessionInfoChangedEvent):
-            await _notify(SessionInfoUpdate(title=event.title))
+            await _notify(
+                SessionInfoUpdate(title=event.title, updated_at=event.timestamp.isoformat())
+            )
 
         elif isinstance(event, AvailableCommandsChangedEvent):
             await _notify(AvailableCommandsUpdate(available_commands=event.commands))

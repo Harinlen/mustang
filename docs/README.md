@@ -105,7 +105,11 @@ Protocol 层：两套 stack 都已在 `kernel.routes.stack.create_stack`
 | **Future phases** | `plans/roadmap.md` | Planning what's next |
 | **CLI client plan** | [`plans/cli-plan.md`](plans/cli-plan.md) | Implementing the CLI client |
 | **CLI Phase B TUI migration** | [`plans/cli-phase-b-tui-migration.md`](plans/cli-phase-b-tui-migration.md) | On-demand active-port plan for oh-my-pi TUI runtime/components/controllers |
+| **CLI Phase B UI repair** | [`plans/cli-phase-b-ui-alignment-repair.md`](plans/cli-phase-b-ui-alignment-repair.md) | Repair plan for restoring oh-my-pi visual/input parity after the first usable Phase B path drifted |
 | **CLI Phase C permissions** | [`plans/cli-phase-c-permissions.md`](plans/cli-phase-c-permissions.md) | Permission UI migration plan for `session/request_permission` |
+| **CLI Phase D session/config/theme** | [`plans/cli-phase-d-session-config-theme.md`](plans/cli-phase-d-session-config-theme.md) | Session picker, local client config, theme selection, optional kernel autostart |
+| **Session ACP compliance refactor** | [`plans/session-acp-compliance-refactor.md`](plans/session-acp-compliance-refactor.md) | Kernel Session refactor for ACP `SessionInfo`, config options, modes, MCP session setup, cancellation, lifecycle actions |
+| **Session lifecycle actions** | [`plans/session-lifecycle-actions.md`](plans/session-lifecycle-actions.md) | Kernel plan for user-visible session delete, rename, archive/unarchive ACP methods |
 | **Backlog** | `plans/backlog.md` | Deferred features from design docs |
 | **Completed work** | `plans/progress.md` | Confirming what's done (kernel era) |
 

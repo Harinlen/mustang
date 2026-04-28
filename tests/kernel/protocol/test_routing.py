@@ -13,7 +13,9 @@ from unittest.mock import AsyncMock, MagicMock
 from kernel.protocol.acp.routing import (
     REQUEST_DISPATCH,
     NOTIFICATION_DISPATCH,
+    _handle_archive_session,
     _handle_cancel_execution,
+    _handle_delete_session,
     _handle_execute_python,
     _handle_execute_shell,
     _handle_new,
@@ -21,6 +23,7 @@ from kernel.protocol.acp.routing import (
     _handle_list,
     _handle_set_mode,
     _handle_set_config_option,
+    _handle_rename_session,
     _handle_cancel,
     _handle_provider_list,
     _handle_provider_add,
@@ -36,16 +39,21 @@ from kernel.protocol.acp.schemas.model import (
     SetDefaultModelRequest,
 )
 from kernel.protocol.acp.schemas.session import (
+    ArchiveSessionRequest,
     CancelExecutionRequest,
     CancelNotification,
+    DeleteSessionRequest,
     ExecutePythonRequest,
     ExecuteShellRequest,
     ListSessionsRequest,
     LoadSessionRequest,
     NewSessionRequest,
+    RenameSessionRequest,
     SetSessionConfigOptionRequest,
     SetSessionModeRequest,
 )
+from kernel.protocol.interfaces.contracts.archive_session_result import ArchiveSessionResult
+from kernel.protocol.interfaces.contracts.delete_session_result import DeleteSessionResult
 from kernel.protocol.interfaces.contracts.handler_context import HandlerContext
 from kernel.protocol.interfaces.contracts.execution_result import ExecutionResult
 from kernel.protocol.interfaces.contracts.list_providers_result import (
@@ -55,6 +63,7 @@ from kernel.protocol.interfaces.contracts.list_providers_result import (
 from kernel.protocol.interfaces.contracts.new_session_result import NewSessionResult
 from kernel.protocol.interfaces.contracts.load_session_result import LoadSessionResult
 from kernel.protocol.interfaces.contracts.list_sessions_result import ListSessionsResult
+from kernel.protocol.interfaces.contracts.rename_session_result import RenameSessionResult
 from kernel.protocol.interfaces.contracts.set_mode_result import SetModeResult
 from kernel.protocol.interfaces.contracts.set_config_option_result import (
     SetConfigOptionResult,
@@ -84,16 +93,27 @@ def _ctx() -> HandlerContext:
 class TestDispatchTables:
     def test_all_session_methods_present(self) -> None:
         for method in [
-            "session/new", "session/load", "session/list",
-            "session/prompt", "session/set_mode", "session/set_config_option",
-            "session/execute_shell", "session/execute_python", "session/cancel_execution",
+            "session/new",
+            "session/load",
+            "session/list",
+            "session/prompt",
+            "session/set_mode",
+            "session/set_config_option",
+            "session/execute_shell",
+            "session/execute_python",
+            "session/cancel_execution",
+            "session/rename",
+            "session/archive",
+            "session/delete",
         ]:
             assert method in REQUEST_DISPATCH
 
     def test_all_model_methods_present(self) -> None:
         for method in [
-            "model/provider_list", "model/provider_add",
-            "model/provider_remove", "model/provider_refresh",
+            "model/provider_list",
+            "model/provider_add",
+            "model/provider_remove",
+            "model/provider_refresh",
             "model/set_default",
         ]:
             assert method in REQUEST_DISPATCH
@@ -144,8 +164,10 @@ class TestHandleList:
             return_value=ListSessionsResult(
                 sessions=[
                     SessionSummary(
-                        session_id="s1", cwd="/tmp",
-                        created_at="2026-01-01T00:00:00Z", title="Test",
+                        session_id="s1",
+                        cwd="/tmp",
+                        updated_at="2026-01-01T00:00:00Z",
+                        title="Test",
                     ),
                 ],
                 next_cursor=None,
@@ -168,19 +190,77 @@ class TestHandleSetMode:
 
 class TestHandleSetConfigOption:
     async def test_delegates(self) -> None:
-        from kernel.protocol.interfaces.contracts.set_config_option_result import ConfigOptionValue
+        from kernel.protocol.interfaces.contracts.session_config import ConfigOptionDescriptor
 
         sh = MagicMock()
         sh.set_config_option = AsyncMock(
             return_value=SetConfigOptionResult(
-                config_options=[ConfigOptionValue(config_id="thinking", value="true")]
+                config_options=[
+                    ConfigOptionDescriptor(
+                        config_id="mode",
+                        name="Mode",
+                        current_value="plan",
+                        options=[],
+                    )
+                ]
             )
         )
         params = SetSessionConfigOptionRequest(
-            session_id="s1", config_id="thinking", value="true",
+            session_id="s1",
+            config_id="mode",
+            value="plan",
         )
         result = await _handle_set_config_option(sh, _ctx(), params)
         assert len(result.config_options) == 1
+        assert result.config_options[0]["configId"] == "mode"
+
+
+class TestHandleLifecycleActions:
+    async def test_rename_delegates(self) -> None:
+        sh = MagicMock()
+        sh.rename_session = AsyncMock(
+            return_value=RenameSessionResult(
+                session_id="s1",
+                cwd="/tmp",
+                updated_at="2026-04-28T00:00:00+00:00",
+                title="Renamed",
+                title_source="user",
+            )
+        )
+        result = await _handle_rename_session(
+            sh,
+            _ctx(),
+            RenameSessionRequest(session_id="s1", title="Renamed"),
+        )
+        assert result.session.title == "Renamed"
+        assert result.session.title_source == "user"
+
+    async def test_archive_delegates(self) -> None:
+        sh = MagicMock()
+        sh.archive_session = AsyncMock(
+            return_value=ArchiveSessionResult(
+                session_id="s1",
+                cwd="/tmp",
+                updated_at="2026-04-28T00:00:00+00:00",
+                archived_at="2026-04-28T00:00:00+00:00",
+            )
+        )
+        result = await _handle_archive_session(
+            sh,
+            _ctx(),
+            ArchiveSessionRequest(session_id="s1", archived=True),
+        )
+        assert result.session.archived_at is not None
+
+    async def test_delete_delegates(self) -> None:
+        sh = MagicMock()
+        sh.delete_session = AsyncMock(return_value=DeleteSessionResult(deleted=True))
+        result = await _handle_delete_session(
+            sh,
+            _ctx(),
+            DeleteSessionRequest(session_id="s1", force=True),
+        )
+        assert result.deleted is True
 
 
 class TestHandleCancel:

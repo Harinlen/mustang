@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Literal
+
 from pydantic import BaseModel
 
 
@@ -10,9 +12,14 @@ class SessionSummary(BaseModel):
 
     session_id: str
     cwd: str
-    created_at: str
-    """ISO-8601 UTC timestamp."""
+    updated_at: str
+    """ISO-8601 UTC timestamp used by ACP session/list."""
     title: str | None = None
+    meta: dict[str, object] | None = None
+    archived_at: str | None = None
+    title_source: Literal["auto", "user"] | None = None
+    created_at: str | None = None
+    """Internal/backward-compatible timestamp; not emitted on ACP list by default."""
 
 
 class ListSessionsResult(BaseModel):

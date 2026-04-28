@@ -11,6 +11,7 @@ from __future__ import annotations
 import asyncio
 import builtins
 import logging
+from datetime import datetime, timezone
 from typing import Any, cast
 
 from kernel.orchestrator import (
@@ -318,10 +319,25 @@ class SessionEventMapperMixin(_SessionMixinBase):
 
         elif isinstance(event, SessionInfoChanged):
             if event.title is not None:
+                record = await self._store.get_session(session.session_id)
+                if record is not None and record.title_source == "user":
+                    return
                 session.title = event.title
-                asyncio.create_task(self._store.update_title(session.session_id, event.title))
+                asyncio.create_task(
+                    self._store.update_title(
+                        session.session_id,
+                        event.title,
+                        title_source="auto",
+                    )
+                )
             await self._write_event(session, SessionInfoChangedEvent, title=event.title)
-            await self._broadcast(session, SessionInfoUpdate(title=event.title))
+            await self._broadcast(
+                session,
+                SessionInfoUpdate(
+                    title=event.title,
+                    updated_at=datetime.now(timezone.utc).isoformat(),
+                ),
+            )
 
         elif isinstance(event, AvailableCommandsChanged):
             await self._write_event(

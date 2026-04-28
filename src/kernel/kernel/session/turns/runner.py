@@ -133,7 +133,9 @@ class SessionTurnRunnerMixin(_SessionMixinBase):
                 continue
             first_text = str(block["text"])[:200]
             session.title = first_text
-            asyncio.create_task(self._store.update_title(session.session_id, first_text))
+            asyncio.create_task(
+                self._store.update_title(session.session_id, first_text, title_source="auto")
+            )
             return
 
     def _turn_token_update(self, session: Session) -> tuple[int, int, TokenUsageUpdate | None]:

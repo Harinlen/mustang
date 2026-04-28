@@ -10,6 +10,7 @@ so tests run without a real kernel process.
 from __future__ import annotations
 
 import json
+import asyncio
 from datetime import datetime, timezone
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock
@@ -22,6 +23,7 @@ from kernel.protocol.acp.session_handler import AcpSessionHandler
 from kernel.protocol.interfaces.contracts.list_sessions_result import (
     ListSessionsResult,
 )
+from kernel.protocol.interfaces.contracts.delete_session_result import DeleteSessionResult
 from kernel.protocol.interfaces.contracts.new_session_result import (
     NewSessionResult,
 )
@@ -76,6 +78,7 @@ def fake_session_handler():
     handler.execute_shell = AsyncMock(return_value=ExecutionResult(exit_code=0))
     handler.execute_python = AsyncMock(return_value=ExecutionResult(exit_code=0))
     handler.cancel_execution = AsyncMock(return_value=None)
+    handler.delete_session = AsyncMock(return_value=DeleteSessionResult(deleted=True))
     return handler
 
 
@@ -225,6 +228,69 @@ class TestSessionListFlow:
         )
         frames = await _round_trip(codec, dispatcher, auth, raw)
         assert frames[0]["result"]["sessions"] == []
+
+
+class TestSessionDeleteFlow:
+    @pytest.mark.anyio
+    async def test_session_delete_returns_deleted(
+        self,
+        codec: AcpCodec,
+        dispatcher: AcpSessionHandler,
+        auth: AuthContext,
+        fake_session_handler,
+    ) -> None:
+        await _round_trip(codec, dispatcher, auth, _initialize_frame())
+        raw = json.dumps(
+            {
+                "jsonrpc": "2.0",
+                "id": 9,
+                "method": "session/delete",
+                "params": {"sessionId": "sess-001", "force": True},
+            }
+        )
+        frames = await _round_trip(codec, dispatcher, auth, raw)
+        assert frames[0]["result"]["deleted"] is True
+        fake_session_handler.delete_session.assert_called_once()
+
+
+class TestCancelRequestFlow:
+    @pytest.mark.anyio
+    async def test_cancel_request_cancels_in_flight_request(
+        self,
+        codec: AcpCodec,
+        dispatcher: AcpSessionHandler,
+        auth: AuthContext,
+        fake_session_handler,
+    ) -> None:
+        async def _slow_prompt(*_args: Any, **_kwargs: Any) -> PromptResult:
+            await asyncio.sleep(5)
+            return PromptResult(stop_reason="end_turn")
+
+        fake_session_handler.prompt = AsyncMock(side_effect=_slow_prompt)
+        await _round_trip(codec, dispatcher, auth, _initialize_frame())
+        prompt_raw = json.dumps(
+            {
+                "jsonrpc": "2.0",
+                "id": 33,
+                "method": "session/prompt",
+                "params": {"sessionId": "sess-001", "prompt": []},
+            }
+        )
+
+        prompt_task = asyncio.create_task(_round_trip(codec, dispatcher, auth, prompt_raw))
+        await asyncio.sleep(0.05)
+        cancel_raw = json.dumps(
+            {
+                "jsonrpc": "2.0",
+                "method": "$/cancel_request",
+                "params": {"requestId": 33},
+            }
+        )
+        cancel_frames = await _round_trip(codec, dispatcher, auth, cancel_raw)
+        frames = await prompt_task
+
+        assert cancel_frames == []
+        assert frames[0]["error"]["code"] == -32800
 
 
 class TestUserReplFlow:

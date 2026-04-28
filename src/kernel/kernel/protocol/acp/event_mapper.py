@@ -66,6 +66,7 @@ from kernel.protocol.acp.schemas.updates import (
     CurrentModeUpdate,
     PlanEntry,
 )
+from kernel.session.runtime.helpers import config_list as _config_list
 from kernel.protocol.acp.schemas.updates import (
     PlanUpdate as AcpPlanUpdate,
 )
@@ -300,12 +301,7 @@ class AcpEventMapper:
         if isinstance(event, ConfigOptionChanged):
             return SessionUpdateNotification(
                 session_id=session_id,
-                update=ConfigOptionUpdate(
-                    config_options=[
-                        {"name": k, "value": v}
-                        for k, v in event.options.items()
-                    ],
-                ),
+                update=ConfigOptionUpdate(config_options=_config_list(event.options)),
             )
 
         if isinstance(event, SessionInfoChanged):

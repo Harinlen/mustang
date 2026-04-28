@@ -53,6 +53,7 @@ from kernel.protocol.acp.schemas.initialize import (
     AuthenticateRequest,
     InitializeRequest,
 )
+from kernel.protocol.acp.schemas.session import CancelRequestNotification
 from kernel.protocol.interfaces.contracts.connection_context import (
     ConnectionContext,
 )
@@ -62,9 +63,11 @@ from kernel.protocol.interfaces.errors import (
     INVALID_PARAMS,
     INVALID_REQUEST,
     METHOD_NOT_FOUND,
+    REQUEST_CANCELLED,
     InternalError,
     InvalidRequest,
     MethodNotFound,
+    RequestCancelled,
 )
 
 if TYPE_CHECKING:
@@ -159,6 +162,7 @@ class AcpSessionHandler:
         self._handshake = AcpHandshake()
         # connection_id → (ConnectionContext, _AcpClientSender)
         self._connections: dict[str, tuple[ConnectionContext, _AcpClientSender]] = {}
+        self._incoming_tasks: dict[str | int, asyncio.Task[None]] = {}
 
     # ------------------------------------------------------------------
     # SessionDispatcher interface
@@ -218,16 +222,19 @@ class AcpSessionHandler:
 
         # Run the handler in a background task so we can drain the
         # sender queue concurrently.
-        handler_result: list[pydantic.BaseModel | Exception] = []
+        handler_result: list[pydantic.BaseModel | BaseException] = []
 
         async def _run() -> None:
             try:
                 result_model = await self._route_request(method, msg, conn, sender)
                 handler_result.append(result_model)
+            except asyncio.CancelledError:
+                handler_result.append(RequestCancelled("Request cancelled"))
             except Exception as exc:
                 handler_result.append(exc)
 
         handler_task = asyncio.create_task(_run())
+        self._incoming_tasks[req_id] = handler_task
 
         # Drain the sender queue continuously while the handler runs.
         # Items include session/update notifications, session/request_permission
@@ -242,8 +249,10 @@ class AcpSessionHandler:
                 handler_task.cancel()
                 raise
 
+        self._incoming_tasks.pop(req_id, None)
+
         # Handler finished — emit the response.
-        if handler_result and isinstance(handler_result[0], Exception):
+        if handler_result and isinstance(handler_result[0], BaseException):
             yield self._make_error_response(req_id, handler_result[0])
         elif handler_result:
             yield AcpOutboundResponse(
@@ -308,6 +317,10 @@ class AcpSessionHandler:
         sender: _AcpClientSender,
     ) -> AsyncIterator[AcpOutbound]:
         method = msg.method
+        if method == "$/cancel_request":
+            self._cancel_incoming_request(msg)
+            return
+
         spec = NOTIFICATION_DISPATCH.get(method)
         if spec is None:
             # ACP: unknown notifications (incl. ``$/`` prefixed) MUST be
@@ -343,6 +356,17 @@ class AcpSessionHandler:
         # Drain any messages the notification handler may have pushed.
         while not sender._queue.empty():
             yield sender._queue.get_nowait()
+
+    def _cancel_incoming_request(self, msg: AcpInboundNotification) -> None:
+        try:
+            params = CancelRequestNotification.model_validate(msg.params)
+        except pydantic.ValidationError:
+            logger.warning("Invalid params for notification '$/cancel_request' — ignoring")
+            return
+
+        task = self._incoming_tasks.get(params.request_id)
+        if task is not None and not task.done():
+            task.cancel()
 
     # ------------------------------------------------------------------
     # on_disconnect
@@ -448,6 +472,8 @@ class AcpSessionHandler:
         elif code == INVALID_REQUEST:
             message = str(exc)
         elif code == METHOD_NOT_FOUND:
+            message = str(exc)
+        elif code == REQUEST_CANCELLED:
             message = str(exc)
         else:
             message = str(exc)

@@ -16,6 +16,9 @@ from pathlib import Path
 from typing import Any
 
 from kernel.protocol.acp.schemas.updates import ConfigOptionUpdate, CurrentModeUpdate
+from kernel.protocol.acp.schemas.updates import SessionInfoUpdate
+from kernel.protocol.interfaces.contracts.archive_session_params import ArchiveSessionParams
+from kernel.protocol.interfaces.contracts.archive_session_result import ArchiveSessionResult
 from kernel.protocol.interfaces.contracts.cancel_params import CancelParams
 from kernel.protocol.interfaces.contracts.handler_context import HandlerContext
 from kernel.protocol.interfaces.contracts.list_sessions_params import ListSessionsParams
@@ -29,20 +32,20 @@ from kernel.protocol.interfaces.contracts.new_session_params import NewSessionPa
 from kernel.protocol.interfaces.contracts.new_session_result import NewSessionResult
 from kernel.protocol.interfaces.contracts.prompt_params import PromptParams
 from kernel.protocol.interfaces.contracts.prompt_result import PromptResult
+from kernel.protocol.interfaces.contracts.rename_session_params import RenameSessionParams
+from kernel.protocol.interfaces.contracts.rename_session_result import RenameSessionResult
 from kernel.protocol.interfaces.contracts.set_config_option_params import (
     SetConfigOptionParams,
 )
-from kernel.protocol.interfaces.contracts.set_config_option_result import (
-    ConfigOptionValue,
-    SetConfigOptionResult,
-)
+from kernel.protocol.interfaces.contracts.set_config_option_result import SetConfigOptionResult
+from kernel.protocol.interfaces.errors import InternalError, InvalidParams, ResourceNotFoundError
 from kernel.protocol.interfaces.contracts.set_mode_params import SetModeParams
 from kernel.protocol.interfaces.contracts.set_mode_result import SetModeResult
-from kernel.protocol.interfaces.errors import InternalError, ResourceNotFoundError
 from kernel.session._shared.base import _SessionMixinBase
 from kernel.session.events import (
     ConfigOptionChangedEvent,
     ModeChangedEvent,
+    SessionInfoChangedEvent,
     SessionLoadedEvent,
 )
 from kernel.session.models import ConversationRecord
@@ -52,6 +55,13 @@ from kernel.session.runtime.helpers import (
     encode_cursor as _encode_cursor,
     get_git_branch as _get_git_branch,
 )
+from kernel.session.runtime.config_options import (
+    MODE_CONFIG_ID,
+    config_descriptors as _config_descriptors,
+    mode_state as _mode_state,
+    normalise_mode_id as _normalise_mode_id,
+    validate_mode_id as _validate_mode_id,
+)
 from kernel.session.runtime.state import Session
 
 UTC = timezone.utc
@@ -60,6 +70,13 @@ logger = logging.getLogger("kernel.session")
 
 class SessionHandlerMixin(_SessionMixinBase):
     """ACP request handlers — one method per ``session/*`` request kind."""
+
+    @staticmethod
+    def _absolute_cwd_or_raise(cwd: str, *, field: str = "cwd") -> Path:
+        path = Path(cwd)
+        if not path.is_absolute():
+            raise InvalidParams(f"{field} must be an absolute path")
+        return path
 
     def _bind_connection_to_session(self, ctx: HandlerContext, session: Session) -> None:
         """Pin the WebSocket connection to ``session`` for routing + broadcasts.
@@ -82,8 +99,10 @@ class SessionHandlerMixin(_SessionMixinBase):
         Returns:
             ``NewSessionResult`` carrying the new ``session_id``.
         """
+        if params.mcp_servers:
+            raise InvalidParams("session-scoped mcpServers are not supported yet")
         session_id = str(uuid.uuid4())
-        cwd = Path(params.cwd)
+        cwd = self._absolute_cwd_or_raise(params.cwd)
 
         cwd = await self._maybe_create_worktree_session(session_id, cwd, params.meta)
 
@@ -96,7 +115,11 @@ class SessionHandlerMixin(_SessionMixinBase):
         )
         self._bind_connection_to_session(ctx, session)
 
-        return NewSessionResult(session_id=session_id)
+        return NewSessionResult(
+            session_id=session_id,
+            config_options=_config_descriptors(session.config_options, session.mode_id),
+            modes=_mode_state(session.mode_id),
+        )
 
     async def _maybe_create_worktree_session(
         self,
@@ -177,7 +200,11 @@ class SessionHandlerMixin(_SessionMixinBase):
         Raises:
             ResourceNotFoundError: ``params.session_id`` is not in the DB.
         """
+        if params.mcp_servers:
+            raise InvalidParams("session-scoped mcpServers are not supported yet")
         session_id = params.session_id
+        if params.cwd is not None:
+            self._absolute_cwd_or_raise(params.cwd)
 
         record = await self._store.get_session(session_id)
         if record is None:
@@ -195,7 +222,10 @@ class SessionHandlerMixin(_SessionMixinBase):
 
         await self._write_event(session, SessionLoadedEvent)
 
-        return LoadSessionResult()
+        return LoadSessionResult(
+            config_options=_config_descriptors(session.config_options, session.mode_id),
+            modes=_mode_state(session.mode_id),
+        )
 
     def _cursor_start_index(
         self,
@@ -210,9 +240,8 @@ class SessionHandlerMixin(_SessionMixinBase):
             cursor: Opaque cursor returned by a previous ``list`` call,
                 or ``None`` for the first page.
 
-        Returns:
-            ``0`` when ``cursor`` is missing, malformed, or already past
-            every record — the caller pages from the start in those cases.
+        Raises:
+            InvalidParams: ``cursor`` is malformed.
         """
         if cursor is None:
             return 0
@@ -220,8 +249,7 @@ class SessionHandlerMixin(_SessionMixinBase):
         try:
             cursor_modified, cursor_id = _decode_cursor(cursor)
         except Exception:
-            logger.warning("Invalid cursor — returning from beginning")
-            return 0
+            raise InvalidParams("Invalid session/list cursor") from None
 
         for index, record in enumerate(records):
             record_is_after_cursor = record.modified < cursor_modified or (
@@ -257,15 +285,29 @@ class SessionHandlerMixin(_SessionMixinBase):
 
     @staticmethod
     def _session_summaries(records: list[ConversationRecord]) -> list[SessionSummary]:
-        return [
-            SessionSummary(
-                session_id=record.session_id,
-                cwd=record.cwd,
-                created_at=record.created,
-                title=record.title,
-            )
-            for record in records
-        ]
+        return [SessionHandlerMixin._session_summary(record) for record in records]
+
+    @staticmethod
+    def _session_summary(record: ConversationRecord) -> SessionSummary:
+        meta: dict[str, object] = {
+            "createdAt": record.created,
+            "totalInputTokens": record.total_input_tokens,
+            "totalOutputTokens": record.total_output_tokens,
+        }
+        if record.archived_at is not None:
+            meta["archivedAt"] = record.archived_at
+        if record.title_source is not None:
+            meta["titleSource"] = record.title_source
+        return SessionSummary(
+            session_id=record.session_id,
+            cwd=record.cwd,
+            updated_at=record.modified,
+            created_at=record.created,
+            title=record.title,
+            archived_at=record.archived_at,
+            title_source=record.title_source,
+            meta=meta,
+        )
 
     async def list(self, ctx: HandlerContext, params: ListSessionsParams) -> ListSessionsResult:
         """Handle ACP ``session/list``: paginated session summaries.
@@ -279,7 +321,12 @@ class SessionHandlerMixin(_SessionMixinBase):
             ``ListSessionsResult`` with one page of summaries plus the
             ``next_cursor`` (``None`` on the last page).
         """
-        records = await self._store.list_sessions()
+        if params.cwd is not None:
+            self._absolute_cwd_or_raise(params.cwd)
+        records = await self._store.list_sessions(
+            include_archived=params.include_archived,
+            archived_only=params.archived_only,
+        )
 
         if params.cwd:
             records = [record for record in records if record.cwd == params.cwd]
@@ -316,6 +363,35 @@ class SessionHandlerMixin(_SessionMixinBase):
 
         return await self._enqueue_turn(session, params, request_id=ctx.request_id)
 
+    async def _apply_mode_change(self, session: Session, mode_id: str) -> str:
+        try:
+            next_mode = _validate_mode_id(mode_id)
+        except ValueError:
+            raise InvalidParams(f"Unsupported session mode: {mode_id!r}") from None
+
+        old_mode = _normalise_mode_id(session.mode_id)
+        session.mode_id = next_mode
+        session.config_options[MODE_CONFIG_ID] = next_mode
+        session.orchestrator.set_mode(next_mode)
+
+        await self._write_event(
+            session,
+            ModeChangedEvent,
+            mode_id=next_mode,
+            from_mode=old_mode,
+        )
+        full_state = dict(session.config_options)
+        await self._write_event(
+            session,
+            ConfigOptionChangedEvent,
+            config_id=MODE_CONFIG_ID,
+            value=next_mode,
+            full_state=full_state,
+        )
+        await self._broadcast(session, CurrentModeUpdate(mode_id=next_mode))
+        await self._broadcast(session, ConfigOptionUpdate(config_options=_config_list(full_state)))
+        return next_mode
+
     async def set_mode(self, ctx: HandlerContext, params: SetModeParams) -> SetModeResult:
         """Handle ACP ``session/set_mode``: switch the session mode and notify.
 
@@ -330,17 +406,7 @@ class SessionHandlerMixin(_SessionMixinBase):
             ResourceNotFoundError: session is not in memory.
         """
         session = self._get_or_raise(params.session_id)
-        old_mode = session.mode_id
-        session.mode_id = params.mode_id
-        session.orchestrator.set_mode(params.mode_id)
-
-        await self._write_event(
-            session,
-            ModeChangedEvent,
-            mode_id=params.mode_id,
-            from_mode=old_mode,
-        )
-        await self._broadcast(session, CurrentModeUpdate(mode_id=params.mode_id))
+        await self._apply_mode_change(session, params.mode_id)
         return SetModeResult()
 
     async def set_config_option(
@@ -359,20 +425,68 @@ class SessionHandlerMixin(_SessionMixinBase):
         Raises:
             ResourceNotFoundError: session is not in memory.
         """
-        session = self._get_or_raise(params.session_id)
-        session.config_options[params.config_id] = params.value
+        if params.config_id != MODE_CONFIG_ID:
+            raise InvalidParams(f"Unsupported session config option: {params.config_id!r}")
 
-        full_state = dict(session.config_options)
-        await self._write_event(
-            session,
-            ConfigOptionChangedEvent,
-            config_id=params.config_id,
-            value=params.value,
-            full_state=full_state,
-        )
-        await self._broadcast(session, ConfigOptionUpdate(config_options=_config_list(full_state)))
+        session = self._get_or_raise(params.session_id)
+        await self._apply_mode_change(session, params.value)
         return SetConfigOptionResult(
-            config_options=[ConfigOptionValue(**item) for item in _config_list(full_state)]
+            config_options=_config_descriptors(session.config_options, session.mode_id)
+        )
+
+    async def rename_session(
+        self, ctx: HandlerContext, params: RenameSessionParams
+    ) -> RenameSessionResult:
+        """Handle ``session/rename`` by setting a user-owned title."""
+        title = params.title.strip()
+        if not title:
+            raise InvalidParams("session title must not be empty")
+        if len(title) > 200:
+            title = title[:200]
+
+        session = await self._get_or_load(params.session_id)
+        session.title = title
+        await self._store.update_title(params.session_id, title, title_source="user")
+        await self._write_event(session, SessionInfoChangedEvent, title=title)
+        await self._broadcast(
+            session,
+            SessionInfoUpdate(
+                title=title,
+                updated_at=datetime.now(UTC).isoformat(),
+                meta={"titleSource": "user"},
+            ),
+        )
+
+        record = await self._store.get_session(params.session_id)
+        if record is None:
+            raise ResourceNotFoundError(f"Session not found: {params.session_id!r}")
+        return RenameSessionResult.model_validate(self._session_summary(record).model_dump())
+
+    async def archive_session(
+        self, ctx: HandlerContext, params: ArchiveSessionParams
+    ) -> ArchiveSessionResult:
+        """Handle ``session/archive`` by toggling archive metadata."""
+        record = await self._store.get_session(params.session_id)
+        if record is None:
+            raise ResourceNotFoundError(f"Session not found: {params.session_id!r}")
+
+        archived_at = datetime.now(UTC).isoformat() if params.archived else None
+        updated = await self._store.archive_session(params.session_id, archived_at)
+        if not updated:
+            raise ResourceNotFoundError(f"Session not found: {params.session_id!r}")
+
+        session = self._sessions.get(params.session_id)
+        if session is not None:
+            await self._broadcast(
+                session,
+                SessionInfoUpdate(updated_at=datetime.now(UTC).isoformat()),
+            )
+
+        updated_record = await self._store.get_session(params.session_id)
+        if updated_record is None:
+            raise ResourceNotFoundError(f"Session not found: {params.session_id!r}")
+        return ArchiveSessionResult.model_validate(
+            self._session_summary(updated_record).model_dump()
         )
 
     async def cancel(self, ctx: HandlerContext, params: CancelParams) -> None:

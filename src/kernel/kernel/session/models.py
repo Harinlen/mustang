@@ -42,6 +42,8 @@ class ConversationRecord(Base):
     session_id: Mapped[str] = mapped_column(sa.String, primary_key=True)
     cwd: Mapped[str] = mapped_column(sa.String, nullable=False)
     title: Mapped[str | None] = mapped_column(sa.String)
+    title_source: Mapped[str | None] = mapped_column(sa.String)
+    archived_at: Mapped[str | None] = mapped_column(sa.String)
     created: Mapped[str] = mapped_column(sa.String, nullable=False, default=_now_iso)
     modified: Mapped[str] = mapped_column(
         sa.String, nullable=False, default=_now_iso, onupdate=_now_iso

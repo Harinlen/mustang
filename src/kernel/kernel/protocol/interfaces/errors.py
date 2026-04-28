@@ -44,6 +44,9 @@ is logged at ERROR level but never included in the wire response."""
 RESOURCE_NOT_FOUND: int = -32002
 """ACP: session / tool / resource does not exist."""
 
+REQUEST_CANCELLED: int = -32800
+"""RFD: a JSON-RPC request was cancelled via ``$/cancel_request``."""
+
 
 # ---------------------------------------------------------------------------
 # Exception classes
@@ -92,6 +95,12 @@ class ResourceNotFoundError(ProtocolError):
     code: int = RESOURCE_NOT_FOUND
 
 
+class RequestCancelled(ProtocolError):
+    """Raised when a JSON-RPC request is cancelled."""
+
+    code: int = REQUEST_CANCELLED
+
+
 __all__ = [
     # constants
     "INTERNAL_ERROR",
@@ -100,6 +109,7 @@ __all__ = [
     "METHOD_NOT_FOUND",
     "PARSE_ERROR",
     "RESOURCE_NOT_FOUND",
+    "REQUEST_CANCELLED",
     # exceptions
     "InternalError",
     "InvalidParams",
@@ -108,4 +118,5 @@ __all__ = [
     "ParseError",
     "ProtocolError",
     "ResourceNotFoundError",
+    "RequestCancelled",
 ]

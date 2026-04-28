@@ -2,7 +2,12 @@
 
 from __future__ import annotations
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+
+from kernel.protocol.interfaces.contracts.session_config import (
+    ConfigOptionDescriptor,
+    SessionModeState,
+)
 
 
 class NewSessionResult(BaseModel):
@@ -10,3 +15,9 @@ class NewSessionResult(BaseModel):
 
     session_id: str
     """Unique identifier for the created session."""
+
+    config_options: list[ConfigOptionDescriptor] = Field(default_factory=list)
+    """Initial ACP session config option descriptors."""
+
+    modes: SessionModeState | None = None
+    """Initial ACP mode state."""

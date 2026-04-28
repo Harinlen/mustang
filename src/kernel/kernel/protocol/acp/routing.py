@@ -27,6 +27,7 @@ from dataclasses import dataclass, field
 from typing import Any, Awaitable, Callable, Literal
 
 from pydantic import BaseModel
+from pydantic.alias_generators import to_camel
 
 from kernel.llm.config import ModelRef
 from kernel.protocol.acp.schemas.model import (
@@ -47,9 +48,13 @@ from kernel.protocol.acp.schemas.model import (
 )
 from kernel.protocol.acp.schemas.session import (
     AcpSessionInfo,
+    ArchiveSessionRequest,
+    ArchiveSessionResponse,
     CancelExecutionRequest,
     CancelExecutionResponse,
     CancelNotification,
+    DeleteSessionRequest,
+    DeleteSessionResponse,
     ExecutePythonRequest,
     ExecutePythonResponse,
     ExecuteShellRequest,
@@ -62,11 +67,17 @@ from kernel.protocol.acp.schemas.session import (
     NewSessionResponse,
     PromptRequest,
     PromptResponse,
+    RenameSessionRequest,
+    RenameSessionResponse,
     SetSessionConfigOptionRequest,
     SetSessionConfigOptionResponse,
     SetSessionModeRequest,
     SetSessionModeResponse,
 )
+from kernel.protocol.interfaces.contracts.archive_session_params import ArchiveSessionParams
+from kernel.protocol.interfaces.contracts.archive_session_result import ArchiveSessionResult
+from kernel.protocol.interfaces.contracts.delete_session_params import DeleteSessionParams
+from kernel.protocol.interfaces.contracts.delete_session_result import DeleteSessionResult
 from kernel.protocol.interfaces.contracts.cancel_execution_params import (
     CancelExecutionParams,
 )
@@ -111,6 +122,8 @@ from kernel.protocol.interfaces.contracts.new_session_result import (
 )
 from kernel.protocol.interfaces.contracts.prompt_params import PromptParams
 from kernel.protocol.interfaces.contracts.prompt_result import PromptResult
+from kernel.protocol.interfaces.contracts.rename_session_params import RenameSessionParams
+from kernel.protocol.interfaces.contracts.rename_session_result import RenameSessionResult
 from kernel.protocol.interfaces.contracts.refresh_models_params import (
     RefreshModelsParams,
 )
@@ -171,6 +184,34 @@ class NotificationSpec:
 # ---------------------------------------------------------------------------
 
 
+def _camelise(value: Any) -> Any:
+    if isinstance(value, dict):
+        return {to_camel(k): _camelise(v) for k, v in value.items()}
+    if isinstance(value, list):
+        return [_camelise(item) for item in value]
+    return value
+
+
+def _dump_contract(value: Any) -> dict[str, Any]:
+    return _camelise(value.model_dump(by_alias=False, exclude_none=True))
+
+
+def _dump_contract_list(values: list[Any]) -> list[dict[str, Any]]:
+    return [_dump_contract(value) for value in values]
+
+
+def _session_info(s: Any) -> AcpSessionInfo:
+    return AcpSessionInfo(
+        session_id=s.session_id,
+        cwd=s.cwd,
+        updated_at=s.updated_at,
+        title=s.title,
+        archived_at=s.archived_at,
+        title_source=s.title_source,
+        meta=s.meta,
+    )
+
+
 async def _handle_new(sh: SessionHandler, ctx: HandlerContext, p: NewSessionRequest) -> BaseModel:
     result = await sh.new(
         ctx,
@@ -180,11 +221,15 @@ async def _handle_new(sh: SessionHandler, ctx: HandlerContext, p: NewSessionRequ
             meta=p.meta,
         ),
     )
-    return NewSessionResponse(session_id=result.session_id)
+    return NewSessionResponse(
+        session_id=result.session_id,
+        config_options=_dump_contract_list(result.config_options),
+        modes=_dump_contract(result.modes) if result.modes is not None else None,
+    )
 
 
 async def _handle_load(sh: SessionHandler, ctx: HandlerContext, p: LoadSessionRequest) -> BaseModel:
-    await sh.load_session(
+    result = await sh.load_session(
         ctx,
         LoadSessionParams(
             session_id=p.session_id,
@@ -192,23 +237,26 @@ async def _handle_load(sh: SessionHandler, ctx: HandlerContext, p: LoadSessionRe
             mcp_servers=[s.model_dump() for s in p.mcp_servers],
         ),
     )
-    return LoadSessionResponse()
+    return LoadSessionResponse(
+        config_options=_dump_contract_list(result.config_options),
+        modes=_dump_contract(result.modes) if result.modes is not None else None,
+    )
 
 
 async def _handle_list(
     sh: SessionHandler, ctx: HandlerContext, p: ListSessionsRequest
 ) -> BaseModel:
-    result = await sh.list(ctx, ListSessionsParams(cursor=p.cursor, cwd=p.cwd))
+    result = await sh.list(
+        ctx,
+        ListSessionsParams(
+            cursor=p.cursor,
+            cwd=p.cwd,
+            include_archived=p.include_archived,
+            archived_only=p.archived_only,
+        ),
+    )
     return ListSessionsResponse(
-        sessions=[
-            AcpSessionInfo(
-                session_id=s.session_id,
-                cwd=s.cwd,
-                created_at=s.created_at,
-                title=s.title,
-            )
-            for s in result.sessions
-        ],
+        sessions=[_session_info(s) for s in result.sessions],
         next_cursor=result.next_cursor,
     )
 
@@ -305,9 +353,37 @@ async def _handle_set_config_option(
             value=p.value,
         ),
     )
-    return SetSessionConfigOptionResponse(
-        config_options=[{"configId": o.config_id, "value": o.value} for o in result.config_options]
+    return SetSessionConfigOptionResponse(config_options=_dump_contract_list(result.config_options))
+
+
+async def _handle_rename_session(
+    sh: SessionHandler, ctx: HandlerContext, p: RenameSessionRequest
+) -> BaseModel:
+    result = await sh.rename_session(
+        ctx,
+        RenameSessionParams(session_id=p.session_id, title=p.title),
     )
+    return RenameSessionResponse(session=_session_info(result))
+
+
+async def _handle_archive_session(
+    sh: SessionHandler, ctx: HandlerContext, p: ArchiveSessionRequest
+) -> BaseModel:
+    result = await sh.archive_session(
+        ctx,
+        ArchiveSessionParams(session_id=p.session_id, archived=p.archived),
+    )
+    return ArchiveSessionResponse(session=_session_info(result))
+
+
+async def _handle_delete_session(
+    sh: SessionHandler, ctx: HandlerContext, p: DeleteSessionRequest
+) -> BaseModel:
+    result = await sh.delete_session(
+        ctx,
+        DeleteSessionParams(session_id=p.session_id, force=p.force),
+    )
+    return DeleteSessionResponse(deleted=result.deleted)
 
 
 async def _handle_cancel(sh: SessionHandler, ctx: HandlerContext, p: CancelNotification) -> None:
@@ -403,7 +479,9 @@ async def _handle_set_default(
 
 
 async def _handle_auth(
-    sm: Any, ctx: HandlerContext, p: Any,
+    sm: Any,
+    ctx: HandlerContext,
+    p: Any,
 ) -> BaseModel:
     """Route ``secrets/auth`` actions to :class:`SecretManager`."""
     from kernel.protocol.interfaces.errors import InvalidParams
@@ -506,6 +584,24 @@ REQUEST_DISPATCH: dict[str, RequestSpec] = {
         handler=_handle_set_config_option,
         params_type=SetSessionConfigOptionRequest,
         result_type=SetConfigOptionResult,
+        target="session",
+    ),
+    "session/rename": RequestSpec(
+        handler=_handle_rename_session,
+        params_type=RenameSessionRequest,
+        result_type=RenameSessionResult,
+        target="session",
+    ),
+    "session/archive": RequestSpec(
+        handler=_handle_archive_session,
+        params_type=ArchiveSessionRequest,
+        result_type=ArchiveSessionResult,
+        target="session",
+    ),
+    "session/delete": RequestSpec(
+        handler=_handle_delete_session,
+        params_type=DeleteSessionRequest,
+        result_type=DeleteSessionResult,
         target="session",
     ),
     # model/* -- routed to ModelHandler (LLMManager)

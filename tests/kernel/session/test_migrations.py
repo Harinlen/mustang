@@ -69,6 +69,20 @@ async def test_fresh_db_creates_tables(tmp_path: Path) -> None:
         await engine.dispose()
 
 
+async def test_fresh_db_creates_archive_columns(tmp_path: Path) -> None:
+    """Fresh schema includes archive and title-source columns."""
+    db = tmp_path / "s.db"
+    engine = create_async_engine(f"sqlite+aiosqlite:///{db}", echo=False)
+    try:
+        await mig.apply(engine)
+        async with engine.connect() as conn:
+            rows = await conn.execute(sa.text("PRAGMA table_info(sessions)"))
+            columns = {row[1] for row in rows.fetchall()}
+        assert {"archived_at", "title_source"} <= columns
+    finally:
+        await engine.dispose()
+
+
 # ---------------------------------------------------------------------------
 # Idempotent re-open
 # ---------------------------------------------------------------------------
