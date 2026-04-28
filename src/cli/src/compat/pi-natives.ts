@@ -117,7 +117,16 @@ export function parseKey(data: string, ..._rest: unknown[]): string | undefined 
 		"\x1b[C": "right",
 		"\x1b[D": "left",
 	};
-	return map[data] ?? (data.length === 1 ? data : undefined);
+	const mapped = map[data];
+	if (mapped) return mapped;
+	if (data.length === 1) {
+		const code = data.charCodeAt(0);
+		if (code >= 1 && code <= 26) {
+			return `ctrl+${String.fromCharCode(code + 96)}`;
+		}
+		return data;
+	}
+	return undefined;
 }
 
 export function matchesKey(data: string, key: string, ..._rest: unknown[]): boolean {

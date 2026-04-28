@@ -99,7 +99,12 @@ class FakeAcpKernel {
 	async #handlePrompt(ws: WebSocket, id: number, sessionId: string, text: string): Promise<void> {
 		if (text.includes("tool")) {
 			this.#notify(ws, sessionId, { sessionUpdate: "tool_call", toolCallId: "tool-1", title: "grep", rawInput: "{\"pattern\":\"foo\"}" });
-			this.#notify(ws, sessionId, { sessionUpdate: "tool_call_update", toolCallId: "tool-1", status: "completed", content: "tool-result" });
+			this.#notify(ws, sessionId, {
+				sessionUpdate: "tool_call_update",
+				toolCallId: "tool-1",
+				status: "completed",
+				content: Array.from({ length: 18 }, (_, index) => `tool-result-line-${index + 1}`).join("\n"),
+			});
 			this.#notify(ws, sessionId, { sessionUpdate: "agent_message_chunk", content: { type: "text", text: "tool done" } });
 			return this.#result(ws, id, { stopReason: "stop" });
 		}
@@ -171,6 +176,7 @@ async function main(): Promise<void> {
 			"PTY_SHELL",
 			"PTY_PY",
 			"success grep",
+			"tool-result-line-12",
 			"Run /session delete confirm",
 			"Deleted session and switched",
 			"Allow command?",
@@ -278,7 +284,9 @@ expect("bang shell execution", ["$ echo PTY_SHELL", "PTY_SHELL"])
 send('$print("PTY_PY")\r')
 expect("dollar python execution", ["PTY_PY"])
 send("show tool\r")
-expect("tool rendering", ["success grep", "tool-result"])
+expect("tool rendering collapsed", ["success grep", "tool-result-line-1", "Ctrl+O for more"])
+send("\x0f")
+expect("ctrl-o expands tool output", ["success grep", "tool-result-line-12"])
 send("/session delete")
 read_for(0.3)
 send("\x1b")
