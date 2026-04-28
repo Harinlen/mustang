@@ -143,6 +143,19 @@ async def test_new_registers_in_memory_session(manager: SessionManager, tmp_path
     assert result.session_id in manager._sessions
 
 
+async def test_delete_session_reports_existing_row(manager: SessionManager, tmp_path: Path) -> None:
+    ctx = _make_ctx()
+    result = await manager.new(ctx, NewSessionParams(cwd=str(tmp_path)))
+
+    assert await manager.delete_session(result.session_id) is True
+    assert await manager._store.get_session(result.session_id) is None
+
+
+async def test_delete_session_reports_missing_row(manager: SessionManager) -> None:
+    """Cron reaper relies on this bool to avoid repeated fake delete counts."""
+    assert await manager.delete_session(str(uuid.uuid4())) is False
+
+
 # ---------------------------------------------------------------------------
 # list()
 # ---------------------------------------------------------------------------

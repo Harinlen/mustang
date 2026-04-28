@@ -127,6 +127,14 @@ wall twice.
   Fix shared helpers at subsystem boundaries so sibling paths cannot
   drift independently.
 
+- **Idempotent cleanup APIs must report whether they actually changed
+  state.**  The cron session reaper repeatedly logged
+  `deleted 1 expired cron sessions` for an already-missing session
+  because `SessionStore.delete_session()` treated "0 rows deleted" as
+  success.  Maintenance loops that run from durable audit tables must
+  distinguish "already gone" from "deleted now" or their logs become
+  misleading until the audit record ages out.
+
 ---
 
 ## Kernel Design-debt Backlog

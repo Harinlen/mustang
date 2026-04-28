@@ -180,7 +180,7 @@ class SessionStore:
                 .values(title=title, modified=_now_iso())
             )
 
-    async def delete_session(self, session_id: str) -> None:
+    async def delete_session(self, session_id: str) -> bool:
         """Delete events then the session row in one atomic transaction.
 
         Spillover sidecar files are NOT removed here; the caller is
@@ -188,15 +188,22 @@ class SessionStore:
 
         Args:
             session_id: Session to delete.
+
+        Returns:
+            ``True`` when the session row existed and was deleted.
         """
         assert self._factory is not None, "SessionStore.open() not called"
         async with self._factory() as db, db.begin():
+            session_exists = await db.get(ConversationRecord, session_id) is not None
             await db.execute(
                 session_events.delete().where(session_events.c.session_id == session_id)
             )
+            if not session_exists:
+                return False
             await db.execute(
                 sa.delete(ConversationRecord).where(ConversationRecord.session_id == session_id)
             )
+            return True
 
     async def read_events(self, session_id: str) -> list[SessionEvent]:
         """Return all events for a session, ordered by timestamp ascending.

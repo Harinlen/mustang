@@ -201,8 +201,7 @@ class SessionLifecycleMixin(_SessionMixinBase):
             self._sessions.pop(session_id, None)
 
         try:
-            await self._store.delete_session(session_id)
-            return True
+            return await self._store.delete_session(session_id)
         except Exception:
             logger.debug("delete_session(%s) — not found in DB", session_id)
             return False

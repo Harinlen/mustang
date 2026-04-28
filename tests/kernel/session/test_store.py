@@ -346,8 +346,9 @@ async def test_delete_session_removes_record_and_events(store: SessionStore) -> 
     await store.create_session_with_events(_make_record(sid), [ev])
     await store.append_event(sid, _make_user_event(sid))
 
-    await store.delete_session(sid)
+    deleted = await store.delete_session(sid)
 
+    assert deleted is True
     assert await store.get_session(sid) is None
     assert await store.read_events(sid) == []
 
@@ -358,11 +359,17 @@ async def test_delete_session_only_removes_target(store: SessionStore) -> None:
     await store.create_session_with_events(_make_record(sid1), [_make_created_event(sid1)])
     await store.create_session_with_events(_make_record(sid2), [_make_created_event(sid2)])
 
-    await store.delete_session(sid1)
+    deleted = await store.delete_session(sid1)
 
+    assert deleted is True
     assert await store.get_session(sid1) is None
     assert await store.get_session(sid2) is not None
     assert len(await store.read_events(sid2)) == 1
+
+
+async def test_delete_session_returns_false_for_missing(store: SessionStore) -> None:
+    """Deleting a missing session should be a no-op, not a successful delete."""
+    assert await store.delete_session(_sid()) is False
 
 
 # ---------------------------------------------------------------------------
