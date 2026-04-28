@@ -41,7 +41,9 @@ logger = logging.getLogger(__name__)
 REPL_HIDDEN_TOOLS: frozenset[str] = frozenset(
     {
         "Bash",
+        "Cmd",
         "PowerShell",
+        "Python",
         "FileRead",
         "FileEdit",
         "FileWrite",

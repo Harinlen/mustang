@@ -96,6 +96,34 @@ class AvailableCommandsUpdate(AcpModel):
     meta: dict[str, Any] | None = None
 
 
+class UserExecutionStart(AcpModel):
+    session_update: Literal["user_execution_start"] = "user_execution_start"
+    kind: Literal["shell", "python"]
+    execution_id: str
+    input: str
+    shell: str | None = None
+    exclude_from_context: bool = False
+    meta: dict[str, Any] | None = None
+
+
+class UserExecutionChunk(AcpModel):
+    session_update: Literal["user_execution_chunk"] = "user_execution_chunk"
+    kind: Literal["shell", "python"]
+    execution_id: str
+    stream: Literal["stdout", "stderr"]
+    text: str
+    meta: dict[str, Any] | None = None
+
+
+class UserExecutionEnd(AcpModel):
+    session_update: Literal["user_execution_end"] = "user_execution_end"
+    kind: Literal["shell", "python"]
+    execution_id: str
+    exit_code: int
+    cancelled: bool = False
+    meta: dict[str, Any] | None = None
+
+
 SessionUpdate = Annotated[
     Union[
         AgentMessageChunk,
@@ -108,6 +136,9 @@ SessionUpdate = Annotated[
         ConfigOptionUpdate,
         SessionInfoUpdate,
         AvailableCommandsUpdate,
+        UserExecutionStart,
+        UserExecutionChunk,
+        UserExecutionEnd,
     ],
     Field(discriminator="session_update"),
 ]

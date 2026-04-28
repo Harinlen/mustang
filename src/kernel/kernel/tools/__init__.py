@@ -134,7 +134,7 @@ class ToolManager(Subsystem):
         except (ImportError, KeyError):
             pass  # MCP subsystem not loaded — no proxy tools.
 
-        # Inject user-configured safe commands into BashTool/PowerShellTool.
+        # Inject user-configured safe commands into BashTool/PowerShellTool/CmdTool.
         # ToolAuthorizer (step 3) already owns the permissions section via
         # bind_section; we use get_section (read-only view) to avoid the
         # single-writer conflict.
@@ -154,7 +154,11 @@ class ToolManager(Subsystem):
         """
         from kernel.tool_authz.config_section import PermissionsSection
 
-        shell_tool = self._registry.lookup("Bash") or self._registry.lookup("PowerShell")
+        shell_tool = (
+            self._registry.lookup("Bash")
+            or self._registry.lookup("PowerShell")
+            or self._registry.lookup("Cmd")
+        )
         if shell_tool is None or not hasattr(shell_tool, "extra_safe_commands"):
             return
 

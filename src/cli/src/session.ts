@@ -1,4 +1,4 @@
-import { AcpClient, PromptResult, SessionUpdateParams } from "@/acp/client.js";
+import { AcpClient, ExecutionResult, PromptResult, SessionUpdateParams } from "@/acp/client.js";
 import { cwd } from "process";
 
 export class MustangSession {
@@ -43,8 +43,38 @@ export class MustangSession {
     }
   }
 
+  async executeShell(
+    command: string,
+    excludeFromContext: boolean,
+    onUpdate: (update: SessionUpdateParams) => void,
+  ): Promise<ExecutionResult> {
+    const unsub = this.client.onUpdate(onUpdate);
+    try {
+      return await this.client.executeShellRequest(this.sessionId, command, excludeFromContext);
+    } finally {
+      unsub();
+    }
+  }
+
+  async executePython(
+    code: string,
+    excludeFromContext: boolean,
+    onUpdate: (update: SessionUpdateParams) => void,
+  ): Promise<ExecutionResult> {
+    const unsub = this.client.onUpdate(onUpdate);
+    try {
+      return await this.client.executePythonRequest(this.sessionId, code, excludeFromContext);
+    } finally {
+      unsub();
+    }
+  }
+
   cancel(): void {
     this.client.notify("session/cancel", { sessionId: this.sessionId });
+  }
+
+  cancelExecution(kind: "shell" | "python" | "any" = "any"): void {
+    this.client.notify("session/cancel_execution", { sessionId: this.sessionId, kind });
   }
 
   async setMode(mode: "default" | "plan"): Promise<void> {

@@ -30,6 +30,30 @@ def has_bash() -> bool:
     return shutil.which("bash") is not None
 
 
+def has_cmd() -> bool:
+    """True when ``cmd.exe`` or ``cmd`` is on PATH."""
+    return shutil.which("cmd.exe") is not None or shutil.which("cmd") is not None
+
+
+def selected_shell_tool() -> str:
+    """Return the built-in shell tool name selected for this platform."""
+    if not is_windows():
+        return "Bash"
+    if os.environ.get("MUSTANG_USE_BASH", "").strip().lower() in ("1", "true", "yes"):
+        return "Bash"
+    if has_powershell():
+        return "PowerShell"
+    if has_cmd():
+        return "Cmd"
+    if has_bash():
+        logger.warning(
+            "PowerShell and cmd.exe not found on PATH; falling back to BashTool "
+            "(bash found — likely WSL or Git Bash environment)"
+        )
+        return "Bash"
+    return "Cmd"
+
+
 def use_powershell_tool() -> bool:
     """Whether PowerShellTool should replace BashTool.
 
@@ -43,21 +67,18 @@ def use_powershell_tool() -> bool:
        report a clear error at ``call()`` time rather than silently
        registering a BashTool that also can't run).
     """
-    if not is_windows():
-        return False
-    if os.environ.get("MUSTANG_USE_BASH", "").strip().lower() in ("1", "true", "yes"):
-        return False
-    if has_powershell():
+    if selected_shell_tool() == "PowerShell":
         return True
-    if has_bash():
-        logger.warning(
-            "PowerShell not found on PATH; falling back to BashTool "
-            "(bash found — likely WSL or Git Bash environment)"
-        )
-        return False
-    # Neither shell found — prefer PowerShellTool for clearer error
-    # messaging on a stock Windows box.
-    return True
+    # Backward-compatible predicate semantics for callers/tests that ask
+    # specifically whether the old PowerShellTool fallback would be used.
+    return is_windows() and not has_powershell() and not has_cmd() and not has_bash()
 
 
-__all__ = ["has_bash", "has_powershell", "is_windows", "use_powershell_tool"]
+__all__ = [
+    "has_bash",
+    "has_cmd",
+    "has_powershell",
+    "is_windows",
+    "selected_shell_tool",
+    "use_powershell_tool",
+]

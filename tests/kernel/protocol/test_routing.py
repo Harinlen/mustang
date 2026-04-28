@@ -13,6 +13,9 @@ from unittest.mock import AsyncMock, MagicMock
 from kernel.protocol.acp.routing import (
     REQUEST_DISPATCH,
     NOTIFICATION_DISPATCH,
+    _handle_cancel_execution,
+    _handle_execute_python,
+    _handle_execute_shell,
     _handle_new,
     _handle_load,
     _handle_list,
@@ -33,7 +36,10 @@ from kernel.protocol.acp.schemas.model import (
     SetDefaultModelRequest,
 )
 from kernel.protocol.acp.schemas.session import (
+    CancelExecutionRequest,
     CancelNotification,
+    ExecutePythonRequest,
+    ExecuteShellRequest,
     ListSessionsRequest,
     LoadSessionRequest,
     NewSessionRequest,
@@ -41,6 +47,7 @@ from kernel.protocol.acp.schemas.session import (
     SetSessionModeRequest,
 )
 from kernel.protocol.interfaces.contracts.handler_context import HandlerContext
+from kernel.protocol.interfaces.contracts.execution_result import ExecutionResult
 from kernel.protocol.interfaces.contracts.list_providers_result import (
     ListProvidersResult,
     ProviderInfo,
@@ -79,6 +86,7 @@ class TestDispatchTables:
         for method in [
             "session/new", "session/load", "session/list",
             "session/prompt", "session/set_mode", "session/set_config_option",
+            "session/execute_shell", "session/execute_python", "session/cancel_execution",
         ]:
             assert method in REQUEST_DISPATCH
 
@@ -92,6 +100,7 @@ class TestDispatchTables:
 
     def test_cancel_notification(self) -> None:
         assert "session/cancel" in NOTIFICATION_DISPATCH
+        assert "session/cancel_execution" in NOTIFICATION_DISPATCH
 
     def test_session_targets(self) -> None:
         for method in ["session/new", "session/load", "session/list"]:
@@ -181,6 +190,41 @@ class TestHandleCancel:
         params = CancelNotification(session_id="s1")
         await _handle_cancel(sh, _ctx(), params)
         sh.cancel.assert_awaited_once()
+
+
+class TestHandleUserRepl:
+    async def test_execute_shell_delegates(self) -> None:
+        sh = MagicMock()
+        sh.execute_shell = AsyncMock(return_value=ExecutionResult(exit_code=0))
+        result = await _handle_execute_shell(
+            sh,
+            _ctx(),
+            ExecuteShellRequest(session_id="s1", command="echo hi", excludeFromContext=True),
+        )
+        sh.execute_shell.assert_awaited_once()
+        assert result.exit_code == 0
+
+    async def test_execute_python_delegates(self) -> None:
+        sh = MagicMock()
+        sh.execute_python = AsyncMock(return_value=ExecutionResult(exit_code=0))
+        result = await _handle_execute_python(
+            sh,
+            _ctx(),
+            ExecutePythonRequest(session_id="s1", code="1 + 1"),
+        )
+        sh.execute_python.assert_awaited_once()
+        assert result.exit_code == 0
+
+    async def test_cancel_execution_delegates(self) -> None:
+        sh = MagicMock()
+        sh.cancel_execution = AsyncMock()
+        result = await _handle_cancel_execution(
+            sh,
+            _ctx(),
+            CancelExecutionRequest(session_id="s1", kind="python"),
+        )
+        sh.cancel_execution.assert_awaited_once()
+        assert result is not None
 
 
 # ---------------------------------------------------------------------------

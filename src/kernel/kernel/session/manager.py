@@ -13,12 +13,14 @@ from kernel.session.orchestration.factory import SessionOrchestratorFactoryMixin
 from kernel.session.turns.permission import SessionPermissionMixin
 from kernel.session.client_stream.replay import SessionReplayMixin
 from kernel.session.turns.runner import SessionTurnRunnerMixin
+from kernel.session.user_repl import UserReplMixin
 from kernel.subsystem import Subsystem
 
 
 class SessionManager(
     SessionLifecycleMixin,
     SessionGatewayMixin,
+    UserReplMixin,
     SessionHandlerMixin,
     SessionTurnRunnerMixin,
     SessionEventMapperMixin,

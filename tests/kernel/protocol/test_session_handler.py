@@ -26,6 +26,7 @@ from kernel.protocol.interfaces.contracts.new_session_result import (
     NewSessionResult,
 )
 from kernel.protocol.interfaces.contracts.prompt_result import PromptResult
+from kernel.protocol.interfaces.contracts.execution_result import ExecutionResult
 
 
 # ---------------------------------------------------------------------------
@@ -72,6 +73,9 @@ def fake_session_handler():
     handler.list = AsyncMock(return_value=ListSessionsResult(sessions=[], next_cursor=None))
     handler.prompt = AsyncMock(return_value=PromptResult(stop_reason="end_turn"))
     handler.cancel = AsyncMock(return_value=None)
+    handler.execute_shell = AsyncMock(return_value=ExecutionResult(exit_code=0))
+    handler.execute_python = AsyncMock(return_value=ExecutionResult(exit_code=0))
+    handler.cancel_execution = AsyncMock(return_value=None)
     return handler
 
 
@@ -221,6 +225,50 @@ class TestSessionListFlow:
         )
         frames = await _round_trip(codec, dispatcher, auth, raw)
         assert frames[0]["result"]["sessions"] == []
+
+
+class TestUserReplFlow:
+    @pytest.mark.anyio
+    async def test_execute_shell_returns_exit_code(
+        self,
+        codec: AcpCodec,
+        dispatcher: AcpSessionHandler,
+        auth: AuthContext,
+        fake_session_handler,
+    ) -> None:
+        await _round_trip(codec, dispatcher, auth, _initialize_frame())
+        raw = json.dumps(
+            {
+                "jsonrpc": "2.0",
+                "id": 8,
+                "method": "session/execute_shell",
+                "params": {"sessionId": "sess-001", "command": "echo hi"},
+            }
+        )
+        frames = await _round_trip(codec, dispatcher, auth, raw)
+        assert frames[0]["result"]["exitCode"] == 0
+        fake_session_handler.execute_shell.assert_called_once()
+
+    @pytest.mark.anyio
+    async def test_execute_python_returns_exit_code(
+        self,
+        codec: AcpCodec,
+        dispatcher: AcpSessionHandler,
+        auth: AuthContext,
+        fake_session_handler,
+    ) -> None:
+        await _round_trip(codec, dispatcher, auth, _initialize_frame())
+        raw = json.dumps(
+            {
+                "jsonrpc": "2.0",
+                "id": 9,
+                "method": "session/execute_python",
+                "params": {"sessionId": "sess-001", "code": "1 + 1"},
+            }
+        )
+        frames = await _round_trip(codec, dispatcher, auth, raw)
+        assert frames[0]["result"]["exitCode"] == 0
+        fake_session_handler.execute_python.assert_called_once()
         # nextCursor is None → excluded by exclude_none=True
         assert "nextCursor" not in frames[0]["result"]
 
@@ -264,6 +312,26 @@ class TestNotificationFlow:
         frames = await _round_trip(codec, dispatcher, auth, raw)
         assert frames == []
         fake_session_handler.cancel.assert_called_once()
+
+    @pytest.mark.anyio
+    async def test_cancel_execution_notification_no_response(
+        self,
+        codec: AcpCodec,
+        dispatcher: AcpSessionHandler,
+        auth: AuthContext,
+        fake_session_handler,
+    ) -> None:
+        await _round_trip(codec, dispatcher, auth, _initialize_frame())
+        raw = json.dumps(
+            {
+                "jsonrpc": "2.0",
+                "method": "session/cancel_execution",
+                "params": {"sessionId": "sess-001", "kind": "any"},
+            }
+        )
+        frames = await _round_trip(codec, dispatcher, auth, raw)
+        assert frames == []
+        fake_session_handler.cancel_execution.assert_called_once()
 
     @pytest.mark.anyio
     async def test_unknown_notification_silently_ignored(

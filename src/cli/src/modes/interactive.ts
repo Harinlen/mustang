@@ -58,6 +58,13 @@ type ToolHandle = {
   title: string;
 };
 
+type UserExecutionHandle = {
+  component: Text;
+  kind: "shell" | "python";
+  input: string;
+  output: string;
+};
+
 const StatusLineCtor = StatusLineComponent as unknown as new (session?: unknown) => StatusLineView;
 const AssistantMessageCtor = AssistantMessageComponent as unknown as new (
   message?: unknown,
@@ -129,6 +136,7 @@ export class InteractiveMode {
   private editor!: Editor;
   private readonly history = new MemoryHistory();
   private readonly toolExecutions = new Map<string, ToolHandle>();
+  private readonly userExecutions = new Map<string, UserExecutionHandle>();
   private commands: AutocompleteItem[] = sortCommandsByLabel(BUILTIN_COMMANDS);
   private toolOutputExpanded = false;
   private currentMessage: AssistantMessageView | null = null;
@@ -204,6 +212,7 @@ export class InteractiveMode {
           if (this.cancelling) return { consume: true };
           this.cancelling = true;
           this.session.cancel();
+          this.session.cancelExecution("any");
           this.statusLine.setMode("cancelling");
           this.chat.addChild(new Text(theme.fg("warning", "[cancelling]"), 1, 0));
           this.tui.requestRender();
@@ -242,6 +251,14 @@ export class InteractiveMode {
     if (!prompt || this.busy) return;
 
     if (this.handleLocalSlashCommand(prompt)) return;
+    if (prompt.startsWith("!")) {
+      await this.submitShell(prompt);
+      return;
+    }
+    if (prompt.startsWith("$") && !prompt.startsWith("${")) {
+      await this.submitPython(prompt);
+      return;
+    }
 
     this.editor.addToHistory(prompt);
     this.chat.addChild(new Text(theme.fg("accent", `> ${prompt}`), 1, 0));
@@ -288,6 +305,15 @@ export class InteractiveMode {
         break;
       case "available_commands_update":
         this.updateCommands(update.availableCommands ?? update.available_commands);
+        break;
+      case "user_execution_start":
+        this.startUserExecution(update);
+        break;
+      case "user_execution_chunk":
+        this.updateUserExecution(update);
+        break;
+      case "user_execution_end":
+        this.endUserExecution(update);
         break;
     }
     this.tui.requestRender();
@@ -355,6 +381,79 @@ export class InteractiveMode {
       status === "in_progress",
       id,
     );
+  }
+
+  private async submitShell(prompt: string): Promise<void> {
+    const excludeFromContext = prompt.startsWith("!!");
+    const command = (excludeFromContext ? prompt.slice(2) : prompt.slice(1)).trim();
+    if (!command || this.busy) return;
+    this.editor.addToHistory(prompt);
+    this.setBusy(true);
+    this.tui.requestRender();
+    try {
+      await this.session.executeShell(command, excludeFromContext, (update) => this.handleUpdate(update));
+    } catch (error) {
+      this.chat.addChild(new Text(theme.fg("error", `Error: ${(error as Error).message}`), 1, 0));
+    } finally {
+      this.cancelling = false;
+      this.setBusy(false);
+      this.tui.requestRender();
+    }
+  }
+
+  private async submitPython(prompt: string): Promise<void> {
+    const excludeFromContext = prompt.startsWith("$$");
+    const code = (excludeFromContext ? prompt.slice(2) : prompt.slice(1)).trim();
+    if (!code || this.busy) return;
+    this.editor.addToHistory(prompt);
+    this.setBusy(true);
+    this.tui.requestRender();
+    try {
+      await this.session.executePython(code, excludeFromContext, (update) => this.handleUpdate(update));
+    } catch (error) {
+      this.chat.addChild(new Text(theme.fg("error", `Error: ${(error as Error).message}`), 1, 0));
+    } finally {
+      this.cancelling = false;
+      this.setBusy(false);
+      this.tui.requestRender();
+    }
+  }
+
+  private startUserExecution(update: SessionUpdateParams): void {
+    const id = String(update.executionId ?? update.execution_id ?? "");
+    if (!id) return;
+    const kind = update.kind === "python" ? "python" : "shell";
+    const input = String(update.input ?? "");
+    const prefix = kind === "python" ? ">>>" : "$";
+    const component = new Text(theme.fg(kind === "python" ? "pythonMode" : "bashMode", `${prefix} ${input}\nRunning...`), 1, 0);
+    this.userExecutions.set(id, { component, kind, input, output: "" });
+    this.chat.addChild(component);
+    this.chat.addChild(new Spacer(1));
+  }
+
+  private updateUserExecution(update: SessionUpdateParams): void {
+    const id = String(update.executionId ?? update.execution_id ?? "");
+    const handle = this.userExecutions.get(id);
+    if (!handle) return;
+    handle.output += String(update.text ?? "");
+    this.renderUserExecution(handle, "running");
+  }
+
+  private endUserExecution(update: SessionUpdateParams): void {
+    const id = String(update.executionId ?? update.execution_id ?? "");
+    const handle = this.userExecutions.get(id);
+    if (!handle) return;
+    const exitCode = Number(update.exitCode ?? update.exit_code ?? 0);
+    const cancelled = Boolean(update.cancelled);
+    this.renderUserExecution(handle, cancelled ? "cancelled" : exitCode === 0 ? "complete" : `exit ${exitCode}`);
+  }
+
+  private renderUserExecution(handle: UserExecutionHandle, status: string): void {
+    const prefix = handle.kind === "python" ? ">>>" : "$";
+    const color = handle.kind === "python" ? "pythonMode" : "bashMode";
+    const body = handle.output ? `\n${theme.fg("muted", sanitizeText(handle.output).trimEnd())}` : "";
+    const suffix = status === "running" ? "\nRunning..." : status === "complete" ? "" : `\n${theme.fg(status === "cancelled" ? "warning" : "error", `(${status})`)}`;
+    handle.component.setText(`${theme.fg(color, `${prefix} ${handle.input}`)}${body}${suffix}`);
   }
 
   private updateCommands(raw: unknown): void {

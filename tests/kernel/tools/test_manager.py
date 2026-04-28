@@ -55,7 +55,7 @@ async def test_snapshot_for_session_emits_schemas(
     names = [s.name for s in snap.schemas]
     assert sorted(names) == [
         "Agent", "Bash", "FileEdit", "FileRead", "FileWrite",
-        "Glob", "Grep", "SendMessage", "Skill", "TaskOutput", "TaskStop",
+        "Glob", "Grep", "Python", "SendMessage", "Skill", "TaskOutput", "TaskStop",
         "TodoWrite", "ToolSearch",
     ]
 

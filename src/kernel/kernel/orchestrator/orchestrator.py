@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any, cast
 
 from kernel.llm.config import ModelRef
+from kernel.llm.types import Message, TextContent
 from kernel.orchestrator import OrchestratorConfig, OrchestratorConfigPatch
 from kernel.orchestrator.agents import drain_orphan_notifications, make_spawn_subagent
 from kernel.orchestrator.compactor import Compactor
@@ -133,6 +134,18 @@ class StandardOrchestrator:
             token_budget=token_budget,
             max_turns=max_turns,
         )
+
+    def append_user_context(self, text: str) -> Message:
+        """Append user-originated context outside a model turn.
+
+        Args:
+            text: Context text to include in future LLM requests.
+
+        Returns:
+            The appended provider-neutral message.
+        """
+        self._history.append_user([TextContent(text=text)])
+        return self._history.messages[-1]
 
     async def close(self) -> None:
         """Release resources held by the orchestrator.

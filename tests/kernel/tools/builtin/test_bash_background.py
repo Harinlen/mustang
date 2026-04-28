@@ -15,6 +15,7 @@ from kernel.tools.builtin.bash import (
 )
 from kernel.tools.context import ToolContext
 from kernel.tools.file_state import FileStateCache
+from kernel.tools.types import ToolCallResult
 
 
 def _make_ctx(tmp_path: Path) -> ToolContext:
@@ -65,9 +66,10 @@ class TestSpawnBackground:
         ):
             results.append(event)
 
-        # Should fall through to foreground execution
-        assert len(results) == 1
-        assert "hello" in str(results[0].data.get("stdout", ""))
+        # Should fall through to foreground execution, possibly streaming progress first.
+        terminal = [event for event in results if isinstance(event, ToolCallResult)]
+        assert len(terminal) == 1
+        assert "hello" in str(terminal[0].data.get("stdout", ""))
 
     @pytest.mark.asyncio
     async def test_foreground_unchanged(self, tmp_path: Path) -> None:
@@ -77,8 +79,9 @@ class TestSpawnBackground:
         async for event in tool.call({"command": "echo foreground"}, ctx):
             results.append(event)
 
-        assert len(results) == 1
-        assert "foreground" in results[0].data["stdout"]
+        terminal = [event for event in results if isinstance(event, ToolCallResult)]
+        assert len(terminal) == 1
+        assert "foreground" in terminal[0].data["stdout"]
 
 
 class TestWaitAndNotify:

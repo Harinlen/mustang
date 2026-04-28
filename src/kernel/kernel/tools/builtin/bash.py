@@ -23,6 +23,7 @@ import logging
 import os
 import re
 import shlex
+import shutil
 import time
 from collections.abc import AsyncGenerator, Callable
 from typing import Any
@@ -42,6 +43,7 @@ from kernel.tools.types import (
     ToolCallResult,
     ToolInputError,
 )
+from kernel.tools.builtin.shell_exec import ShellSpec, run_shell_command
 
 logger = logging.getLogger(__name__)
 
@@ -451,51 +453,23 @@ class BashTool(Tool[dict[str, Any], str]):
             yield await self._spawn_background(command, description, timeout_ms, ctx)
             return
 
-        process = await asyncio.create_subprocess_shell(
-            command,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
-            cwd=str(ctx.cwd),
-            env={**ctx.env} if ctx.env else None,
-        )
-
-        try:
-            stdout_bytes, stderr_bytes = await asyncio.wait_for(
-                process.communicate(), timeout=timeout_ms / 1000.0
-            )
-        except asyncio.TimeoutError:
-            process.kill()
-            await process.wait()
-            error = f"command timed out after {timeout_ms}ms"
+        shell = shutil.which("bash") or shutil.which("sh")
+        if shell is None:
+            error = "neither bash nor sh found on PATH"
             yield ToolCallResult(
                 data={"exit_code": -1, "stdout": "", "stderr": error},
                 llm_content=[TextBlock(type="text", text=error)],
                 display=TextDisplay(text=error),
             )
             return
-        except asyncio.CancelledError:
-            process.kill()
-            await process.wait()
-            raise
 
-        stdout = stdout_bytes.decode("utf-8", errors="replace")
-        stderr = stderr_bytes.decode("utf-8", errors="replace")
-        exit_code = process.returncode or 0
-
-        body_parts = []
-        if stdout:
-            body_parts.append(stdout.rstrip())
-        if stderr:
-            body_parts.append(f"[stderr]\n{stderr.rstrip()}")
-        if exit_code != 0:
-            body_parts.append(f"[exit {exit_code}]")
-        body = "\n".join(body_parts) if body_parts else "(no output)"
-
-        yield ToolCallResult(
-            data={"exit_code": exit_code, "stdout": stdout, "stderr": stderr},
-            llm_content=[TextBlock(type="text", text=body)],
-            display=TextDisplay(text=body, language="shell-session"),
-        )
+        async for event in run_shell_command(
+            ShellSpec(argv=[shell, "-lc", command]),
+            cwd=ctx.cwd,
+            env=ctx.env,
+            timeout_ms=timeout_ms,
+        ):
+            yield event
 
     async def _spawn_background(
         self,

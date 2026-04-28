@@ -16,7 +16,6 @@ tool calls targeting ``"Bash"`` resolve to this tool via
 
 from __future__ import annotations
 
-import asyncio
 import logging
 import re
 import shutil
@@ -27,6 +26,7 @@ from typing import Any
 from kernel.orchestrator.types import ToolKind
 from kernel.protocol.interfaces.contracts.text_block import TextBlock
 from kernel.tools.context import ToolContext
+from kernel.tools.builtin.shell_exec import ShellSpec, run_shell_command
 from kernel.tools.tool import RiskContext, Tool
 from kernel.tools.types import (
     PermissionSuggestion,
@@ -271,55 +271,13 @@ class PowerShellTool(Tool[dict[str, Any], str]):
             )
             return
 
-        process = await asyncio.create_subprocess_exec(
-            pwsh,
-            "-NoProfile",
-            "-NonInteractive",
-            "-Command",
-            command,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
-            cwd=str(ctx.cwd),
-            env={**ctx.env} if ctx.env else None,
-        )
-
-        try:
-            stdout_bytes, stderr_bytes = await asyncio.wait_for(
-                process.communicate(), timeout=timeout_ms / 1000.0
-            )
-        except asyncio.TimeoutError:
-            process.kill()
-            await process.wait()
-            error = f"command timed out after {timeout_ms}ms"
-            yield ToolCallResult(
-                data={"exit_code": -1, "stdout": "", "stderr": error},
-                llm_content=[TextBlock(type="text", text=error)],
-                display=TextDisplay(text=error),
-            )
-            return
-        except asyncio.CancelledError:
-            process.kill()
-            await process.wait()
-            raise
-
-        stdout = stdout_bytes.decode("utf-8", errors="replace")
-        stderr = stderr_bytes.decode("utf-8", errors="replace")
-        exit_code = process.returncode or 0
-
-        body_parts = []
-        if stdout:
-            body_parts.append(stdout.rstrip())
-        if stderr:
-            body_parts.append(f"[stderr]\n{stderr.rstrip()}")
-        if exit_code != 0:
-            body_parts.append(f"[exit {exit_code}]")
-        body = "\n".join(body_parts) if body_parts else "(no output)"
-
-        yield ToolCallResult(
-            data={"exit_code": exit_code, "stdout": stdout, "stderr": stderr},
-            llm_content=[TextBlock(type="text", text=body)],
-            display=TextDisplay(text=body, language="shell-session"),
-        )
+        async for event in run_shell_command(
+            ShellSpec(argv=[pwsh, "-NoProfile", "-NonInteractive", "-Command", command]),
+            cwd=ctx.cwd,
+            env=ctx.env,
+            timeout_ms=timeout_ms,
+        ):
+            yield event
 
 
 # ──────────────────────────────────────────────────────────────────

@@ -8,6 +8,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from kernel.tools.builtin.bash import ALLOWLIST_SAFE_COMMANDS, BashTool
+from kernel.tools.types import ToolCallResult
 
 
 @pytest.fixture
@@ -102,7 +103,8 @@ async def test_call_executes_simple_command(tool: BashTool, ctx, tmp_path) -> No
 
     gen = tool.call({"command": "cat marker.txt"}, ctx)
     events = [event async for event in gen]
-    assert len(events) == 1
-    result = events[0]
+    terminal = [event for event in events if isinstance(event, ToolCallResult)]
+    assert len(terminal) == 1
+    result = terminal[0]
     assert result.data["exit_code"] == 0
     assert "hello" in result.data["stdout"]

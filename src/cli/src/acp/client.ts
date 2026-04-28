@@ -48,6 +48,11 @@ export interface PromptResult {
   stopReason: string;
 }
 
+export interface ExecutionResult {
+  exitCode: number;
+  cancelled: boolean;
+}
+
 // ---------------------------------------------------------------------------
 // Errors
 // ---------------------------------------------------------------------------
@@ -269,6 +274,34 @@ export class AcpClient {
       { timeoutMs: 0 }, // no timeout
     );
     // Kernel sends response before trailing session/update chunks
+    await new Promise((r) => setTimeout(r, 50));
+    return result;
+  }
+
+  async executeShellRequest(
+    sessionId: string,
+    command: string,
+    excludeFromContext: boolean,
+  ): Promise<ExecutionResult> {
+    const result = await this.request<ExecutionResult>(
+      "session/execute_shell",
+      { sessionId, command, excludeFromContext, shell: "auto" },
+      { timeoutMs: 0 },
+    );
+    await new Promise((r) => setTimeout(r, 50));
+    return result;
+  }
+
+  async executePythonRequest(
+    sessionId: string,
+    code: string,
+    excludeFromContext: boolean,
+  ): Promise<ExecutionResult> {
+    const result = await this.request<ExecutionResult>(
+      "session/execute_python",
+      { sessionId, code, excludeFromContext },
+      { timeoutMs: 0 },
+    );
     await new Promise((r) => setTimeout(r, 50));
     return result;
   }

@@ -88,6 +88,52 @@ class PromptResponse(AcpModel):
     meta: dict[str, Any] | None = None
 
 
+# session/execute_shell
+
+
+class ExecuteShellRequest(AcpModel):
+    session_id: str
+    command: str
+    exclude_from_context: bool = False
+    shell: str = "auto"
+    meta: dict[str, Any] | None = None
+
+
+class ExecuteShellResponse(AcpModel):
+    exit_code: int
+    cancelled: bool = False
+    meta: dict[str, Any] | None = None
+
+
+# session/execute_python
+
+
+class ExecutePythonRequest(AcpModel):
+    session_id: str
+    code: str
+    exclude_from_context: bool = False
+    meta: dict[str, Any] | None = None
+
+
+class ExecutePythonResponse(AcpModel):
+    exit_code: int
+    cancelled: bool = False
+    meta: dict[str, Any] | None = None
+
+
+# session/cancel_execution
+
+
+class CancelExecutionRequest(AcpModel):
+    session_id: str
+    kind: str = "any"
+    meta: dict[str, Any] | None = None
+
+
+class CancelExecutionResponse(AcpModel):
+    meta: dict[str, Any] | None = None
+
+
 # session/cancel (notification)
 
 

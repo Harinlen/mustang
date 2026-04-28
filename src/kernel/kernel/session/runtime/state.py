@@ -90,3 +90,4 @@ class Session:
 
     task_registry: Any = field(default=None)
     subagent_depth: int = 0
+    user_executions: dict[str, asyncio.Task[Any]] = field(default_factory=dict)

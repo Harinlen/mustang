@@ -47,7 +47,13 @@ from kernel.protocol.acp.schemas.model import (
 )
 from kernel.protocol.acp.schemas.session import (
     AcpSessionInfo,
+    CancelExecutionRequest,
+    CancelExecutionResponse,
     CancelNotification,
+    ExecutePythonRequest,
+    ExecutePythonResponse,
+    ExecuteShellRequest,
+    ExecuteShellResponse,
     ListSessionsRequest,
     ListSessionsResponse,
     LoadSessionRequest,
@@ -61,6 +67,9 @@ from kernel.protocol.acp.schemas.session import (
     SetSessionModeRequest,
     SetSessionModeResponse,
 )
+from kernel.protocol.interfaces.contracts.cancel_execution_params import (
+    CancelExecutionParams,
+)
 from kernel.protocol.interfaces.contracts.add_provider_params import (
     AddProviderParams,
 )
@@ -68,6 +77,10 @@ from kernel.protocol.interfaces.contracts.add_provider_result import (
     AddProviderResult,
 )
 from kernel.protocol.interfaces.contracts.cancel_params import CancelParams
+from kernel.protocol.interfaces.contracts.execute_python_params import (
+    ExecutePythonParams,
+)
+from kernel.protocol.interfaces.contracts.execute_shell_params import ExecuteShellParams
 from kernel.protocol.interfaces.contracts.handler_context import HandlerContext
 from kernel.protocol.interfaces.contracts.list_profiles_params import (
     ListProfilesParams,
@@ -224,6 +237,54 @@ async def _handle_prompt(sh: SessionHandler, ctx: HandlerContext, p: PromptReque
         PromptParams(session_id=p.session_id, prompt=blocks, max_turns=p.max_turns),
     )
     return PromptResponse(stop_reason=result.stop_reason)
+
+
+async def _handle_execute_shell(
+    sh: SessionHandler, ctx: HandlerContext, p: ExecuteShellRequest
+) -> BaseModel:
+    result = await sh.execute_shell(
+        ctx,
+        ExecuteShellParams(
+            session_id=p.session_id,
+            command=p.command,
+            exclude_from_context=p.exclude_from_context,
+            shell=p.shell,  # type: ignore[arg-type]
+        ),
+    )
+    return ExecuteShellResponse(exit_code=result.exit_code, cancelled=result.cancelled)
+
+
+async def _handle_execute_python(
+    sh: SessionHandler, ctx: HandlerContext, p: ExecutePythonRequest
+) -> BaseModel:
+    result = await sh.execute_python(
+        ctx,
+        ExecutePythonParams(
+            session_id=p.session_id,
+            code=p.code,
+            exclude_from_context=p.exclude_from_context,
+        ),
+    )
+    return ExecutePythonResponse(exit_code=result.exit_code, cancelled=result.cancelled)
+
+
+async def _handle_cancel_execution(
+    sh: SessionHandler, ctx: HandlerContext, p: CancelExecutionRequest
+) -> BaseModel:
+    await sh.cancel_execution(
+        ctx,
+        CancelExecutionParams(session_id=p.session_id, kind=p.kind),  # type: ignore[arg-type]
+    )
+    return CancelExecutionResponse()
+
+
+async def _notify_cancel_execution(
+    sh: SessionHandler, ctx: HandlerContext, p: CancelExecutionRequest
+) -> None:
+    await sh.cancel_execution(
+        ctx,
+        CancelExecutionParams(session_id=p.session_id, kind=p.kind),  # type: ignore[arg-type]
+    )
 
 
 async def _handle_set_mode(
@@ -417,6 +478,24 @@ REQUEST_DISPATCH: dict[str, RequestSpec] = {
         result_type=PromptResult,
         target="session",
     ),
+    "session/execute_shell": RequestSpec(
+        handler=_handle_execute_shell,
+        params_type=ExecuteShellRequest,
+        result_type=ExecuteShellResponse,
+        target="session",
+    ),
+    "session/execute_python": RequestSpec(
+        handler=_handle_execute_python,
+        params_type=ExecutePythonRequest,
+        result_type=ExecutePythonResponse,
+        target="session",
+    ),
+    "session/cancel_execution": RequestSpec(
+        handler=_handle_cancel_execution,
+        params_type=CancelExecutionRequest,
+        result_type=CancelExecutionResponse,
+        target="session",
+    ),
     "session/set_mode": RequestSpec(
         handler=_handle_set_mode,
         params_type=SetSessionModeRequest,
@@ -479,6 +558,10 @@ NOTIFICATION_DISPATCH: dict[str, NotificationSpec] = {
     "session/cancel": NotificationSpec(
         handler=_handle_cancel,
         params_type=CancelNotification,
+    ),
+    "session/cancel_execution": NotificationSpec(
+        handler=_notify_cancel_execution,
+        params_type=CancelExecutionRequest,
     ),
 }
 

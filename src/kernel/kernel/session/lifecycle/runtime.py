@@ -262,6 +262,8 @@ class SessionLifecycleMixin(_SessionMixinBase):
                 during eviction and explicit deletion where teardown
                 failures do not warrant a traceback.
         """
+        for task in list(session.user_executions.values()):
+            task.cancel()
         try:
             await session.orchestrator.close()
         except Exception:
@@ -279,3 +281,13 @@ class SessionLifecycleMixin(_SessionMixinBase):
                         "session=%s task_registry shutdown failed",
                         session.session_id,
                     )
+        try:
+            from kernel.tools.builtin.python_tool import shutdown_python_worker
+
+            shutdown_python_worker(session.session_id)
+        except Exception:
+            if not quiet:
+                logger.exception(
+                    "session=%s python worker shutdown failed",
+                    session.session_id,
+                )

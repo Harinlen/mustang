@@ -17,6 +17,10 @@ from __future__ import annotations
 from typing import Protocol, runtime_checkable
 
 from kernel.protocol.interfaces.contracts.cancel_params import CancelParams
+from kernel.protocol.interfaces.contracts.cancel_execution_params import CancelExecutionParams
+from kernel.protocol.interfaces.contracts.execute_python_params import ExecutePythonParams
+from kernel.protocol.interfaces.contracts.execute_shell_params import ExecuteShellParams
+from kernel.protocol.interfaces.contracts.execution_result import ExecutionResult
 from kernel.protocol.interfaces.contracts.handler_context import HandlerContext
 from kernel.protocol.interfaces.contracts.list_sessions_params import (
     ListSessionsParams,
@@ -75,6 +79,24 @@ class SessionHandler(Protocol):
         ``PromptResult(stop_reason="cancelled")`` — never let the
         exception propagate as a JSON-RPC error.
         """
+        ...
+
+    async def execute_shell(
+        self, ctx: HandlerContext, params: ExecuteShellParams
+    ) -> ExecutionResult:
+        """Execute a user-triggered shell command for a session."""
+        ...
+
+    async def execute_python(
+        self, ctx: HandlerContext, params: ExecutePythonParams
+    ) -> ExecutionResult:
+        """Execute user-triggered Python code for a session."""
+        ...
+
+    async def cancel_execution(
+        self, ctx: HandlerContext, params: CancelExecutionParams
+    ) -> None:
+        """Cancel in-flight user REPL execution for a session."""
         ...
 
     async def set_mode(self, ctx: HandlerContext, params: SetModeParams) -> SetModeResult:
