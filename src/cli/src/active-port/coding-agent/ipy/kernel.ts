@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { $env, $flag, isBunTestRuntime, logger, Snowflake } from "@oh-my-pi/pi-utils";
+import { $env, $flag, isBunTestRuntime, logger, Snowflake } from "@/compat/utils.js";
 import { $ } from "bun";
 import { Settings } from "../config/settings";
 import { htmlToBasicMarkdown } from "../web/scrapers/types";

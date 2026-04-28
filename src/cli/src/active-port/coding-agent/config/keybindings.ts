@@ -9,8 +9,8 @@ import {
 	setKeybindings,
 	TUI_KEYBINDINGS,
 	KeybindingsManager as TuiKeybindingsManager,
-} from "@oh-my-pi/pi-tui";
-import { getAgentDir, isEnoent, logger } from "@oh-my-pi/pi-utils";
+} from "@/tui/index.js";
+import { getAgentDir, isEnoent, logger } from "@/compat/utils.js";
 
 /**
  * Application-level keybindings (coding agent specific).
@@ -53,7 +53,7 @@ interface AppKeybindings {
 
 export type AppKeybinding = keyof AppKeybindings;
 
-declare module "@oh-my-pi/pi-tui" {
+declare module "@/tui/index.js" {
 	interface Keybindings extends AppKeybindings {}
 }
 

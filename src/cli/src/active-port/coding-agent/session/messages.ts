@@ -1,6 +1,6 @@
 // @ts-nocheck
-import type { AgentMessage } from "@oh-my-pi/pi-agent-core";
-import type { Message } from "@oh-my-pi/pi-ai";
+import type { AgentMessage } from "@/compat/agent-core.js";
+import type { Message } from "@/compat/ai.js";
 
 export const SKILL_PROMPT_MESSAGE_TYPE = "skill-prompt";
 

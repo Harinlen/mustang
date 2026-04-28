@@ -17,7 +17,7 @@
  * - settings: From settings.json
  */
 import * as path from "node:path";
-import { tryParseJson } from "@oh-my-pi/pi-utils";
+import { tryParseJson } from "@/compat/utils.js";
 import { registerProvider } from "../capability";
 import { type ContextFile, contextFileCapability } from "../capability/context-file";
 import { type Extension, type ExtensionManifest, extensionCapability } from "../capability/extension";

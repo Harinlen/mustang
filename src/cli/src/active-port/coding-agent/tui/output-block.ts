@@ -2,7 +2,7 @@
 /**
  * Bordered output container with optional header and sections.
  */
-import { ImageProtocol, padding, TERMINAL, visibleWidth, wrapTextWithAnsi } from "@oh-my-pi/pi-tui";
+import { ImageProtocol, padding, TERMINAL, visibleWidth, wrapTextWithAnsi } from "@/tui/index.js";
 import type { Theme } from "../modes/theme/theme";
 import { getSixelLineMask } from "../utils/sixel";
 import type { State } from "./types";

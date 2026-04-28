@@ -1,8 +1,8 @@
 // @ts-nocheck
 import * as fs from "node:fs";
-import type { AssistantMessage } from "@oh-my-pi/pi-ai";
-import { type Component, truncateToWidth, visibleWidth } from "@oh-my-pi/pi-tui";
-import { formatCount, getProjectDir } from "@oh-my-pi/pi-utils";
+import type { AssistantMessage } from "@/compat/ai.js";
+import { type Component, truncateToWidth, visibleWidth } from "@/tui/index.js";
+import { formatCount, getProjectDir } from "@/compat/utils.js";
 import { $ } from "bun";
 import { settings } from "../../config/settings";
 import type { StatusLinePreset, StatusLineSegmentId, StatusLineSeparatorStyle } from "../../config/settings-schema";

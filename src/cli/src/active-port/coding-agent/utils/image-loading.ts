@@ -1,7 +1,7 @@
 // @ts-nocheck
 import * as fs from "node:fs/promises";
-import type { ImageContent } from "@oh-my-pi/pi-ai";
-import { formatBytes, readImageMetadata, SUPPORTED_IMAGE_MIME_TYPES } from "@oh-my-pi/pi-utils";
+import type { ImageContent } from "@/compat/ai.js";
+import { formatBytes, readImageMetadata, SUPPORTED_IMAGE_MIME_TYPES } from "@/compat/utils.js";
 import { resolveReadPath } from "../tools/path-utils";
 import { convertToPng } from "./image-convert";
 import { formatDimensionNote, resizeImage } from "./image-resize";

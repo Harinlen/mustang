@@ -1,0 +1,18 @@
+# CLI Plans
+
+This folder keeps CLI implementation plans after they leave the global
+`docs/plans/` queue. Most files here are implemented history; keep them because
+they document active-port decisions, OMP baseline assumptions, verification
+commands, and ACP boundary choices.
+
+| Plan | Status |
+|---|---|
+| [phase-b-tui-migration.md](phase-b-tui-migration.md) | historical Phase B migration plan |
+| [phase-b-ui-alignment-repair.md](phase-b-ui-alignment-repair.md) | implemented |
+| [phase-c-permissions.md](phase-c-permissions.md) | implemented |
+| [phase-d-session-config-theme.md](phase-d-session-config-theme.md) | implemented |
+| [kernel-repl-bang-dollar.md](kernel-repl-bang-dollar.md) | implemented |
+| [omp-first-refactor.md](omp-first-refactor.md) | implemented |
+
+For new investigations, prefer `../audits/` until the work becomes an
+implementation plan.

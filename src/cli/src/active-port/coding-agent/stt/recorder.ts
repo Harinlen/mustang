@@ -2,7 +2,7 @@
 import * as fs from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
-import { $which, logger, Snowflake } from "@oh-my-pi/pi-utils";
+import { $which, logger, Snowflake } from "@/compat/utils.js";
 import { $ } from "bun";
 
 export interface RecordingHandle {

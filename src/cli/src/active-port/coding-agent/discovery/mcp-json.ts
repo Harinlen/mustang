@@ -8,7 +8,7 @@
  * Priority: 5 (low, as this is a fallback after tool-specific providers)
  */
 import * as path from "node:path";
-import { logger, tryParseJson } from "@oh-my-pi/pi-utils";
+import { logger, tryParseJson } from "@/compat/utils.js";
 import { registerProvider } from "../capability";
 import { readFile } from "../capability/fs";
 import { type MCPServer, mcpCapability } from "../capability/mcp";

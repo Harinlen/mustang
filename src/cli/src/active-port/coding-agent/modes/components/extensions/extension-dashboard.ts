@@ -21,7 +21,7 @@ import {
 	Text,
 	truncateToWidth,
 	visibleWidth,
-} from "@oh-my-pi/pi-tui";
+} from "@/tui/index.js";
 import { Settings } from "../../../config/settings";
 import { DynamicBorder } from "../../../modes/components/dynamic-border";
 import { theme } from "../../../modes/theme/theme";

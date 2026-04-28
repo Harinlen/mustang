@@ -1,7 +1,7 @@
 # CLI 交互快捷键差距调查
 
-**父计划**: [`cli-plan.md`](cli-plan.md)  
-**范围**: `src/cli/` interactive TUI 输入行为  
+**父计划**: [`../roadmap.md`](../roadmap.md)
+**范围**: `src/cli/` interactive TUI 输入行为
 **状态**: investigation — 2026-04-27
 
 ## 摘要

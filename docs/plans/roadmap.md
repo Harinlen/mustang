@@ -64,7 +64,8 @@ Mustang 适配：mailbox 走 TaskRegistry 或 ACP event bus，不走文件系统
 
 ## CLI 客户端（Active）
 
-**Design**: [`docs/kernel/interfaces/cli-client.md`](../kernel/interfaces/cli-client.md)
+**Design**: [`docs/cli/design.md`](../cli/design.md)
+**Docs**: [`docs/cli/README.md`](../cli/README.md)
 
 Mustang 的第一个面向用户前端：thin ACP client，TUI 移植自
 [oh-my-pi](https://github.com/can1357/oh-my-pi)（TypeScript/Bun）。
@@ -77,7 +78,7 @@ Mustang 的第一个面向用户前端：thin ACP client，TUI 移植自
 | C | 工具授权交互（approve/deny dialog） | P1 |
 | D | session 管理 + 本地配置 + 主题 | P2 |
 
-位置：`packages/cli/`（Bun workspace，与 `src/kernel/` 并列）
+位置：`src/cli/`（Bun workspace，与 `src/kernel/` 并列）
 
 ---
 
@@ -120,4 +121,3 @@ so ideas aren't lost if the kernel eventually needs similar features.
   per-server connection pooling, KEYED support for MCP tools.
 - **Web fetch LLM post-processing** — sub-agent summarization of raw
   HTML output.
-

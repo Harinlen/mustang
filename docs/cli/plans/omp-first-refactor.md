@@ -1,10 +1,10 @@
 # CLI OMP-First 重构计划
 
 **父计划**：
-[`cli-plan.md`](cli-plan.md),
-[`cli-phase-b-tui-migration.md`](cli-phase-b-tui-migration.md),
-[`cli-phase-b-ui-alignment-repair.md`](cli-phase-b-ui-alignment-repair.md),
-[`cli-phase-c-permissions.md`](cli-phase-c-permissions.md)
+[`../roadmap.md`](../roadmap.md),
+[`phase-b-tui-migration.md`](phase-b-tui-migration.md),
+[`phase-b-ui-alignment-repair.md`](phase-b-ui-alignment-repair.md),
+[`phase-c-permissions.md`](phase-c-permissions.md)
 
 **范围**：`src/cli/` TypeScript / Bun 客户端
 

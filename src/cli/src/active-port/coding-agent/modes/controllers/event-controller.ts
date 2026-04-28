@@ -1,7 +1,7 @@
 // @ts-nocheck
-import { INTENT_FIELD } from "@oh-my-pi/pi-agent-core";
-import type { AssistantMessage, ImageContent } from "@oh-my-pi/pi-ai";
-import { Loader, TERMINAL, Text } from "@oh-my-pi/pi-tui";
+import { INTENT_FIELD } from "@/compat/agent-core.js";
+import type { AssistantMessage, ImageContent } from "@/compat/ai.js";
+import { Loader, TERMINAL, Text } from "@/tui/index.js";
 import { settings } from "../../config/settings";
 import { AssistantMessageComponent } from "../../modes/components/assistant-message";
 import { ReadToolGroupComponent } from "../../modes/components/read-tool-group";
@@ -214,7 +214,6 @@ export class EventController {
 		if (this.ctx.streamingComponent && event.message.role === "assistant") {
 			this.ctx.streamingMessage = event.message;
 			this.ctx.streamingComponent.updateContent(this.ctx.streamingMessage);
-			this.#mountStreamingComponentIfVisible();
 
 			const thinkingCount = this.ctx.streamingMessage.content.filter(
 				content => content.type === "thinking" && content.thinking.trim(),
@@ -282,6 +281,7 @@ export class EventController {
 				this.#updateWorkingMessageFromIntent(args[INTENT_FIELD] as string | undefined);
 			}
 
+			this.#mountStreamingComponentIfVisible();
 			this.ctx.ui.requestRender();
 		}
 	}

@@ -7,7 +7,7 @@
  */
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { getAgentDir } from "@oh-my-pi/pi-utils";
+import { getAgentDir } from "@/compat/utils.js";
 
 export interface CustomShareResult {
 	/** URL to display/open (optional - script may handle everything itself) */

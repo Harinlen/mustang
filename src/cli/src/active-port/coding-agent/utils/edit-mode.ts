@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { $env, $flag } from "@oh-my-pi/pi-utils";
+import { $env, $flag } from "@/compat/utils.js";
 
 export type EditMode = "replace" | "patch" | "hashline" | "chunk" | "vim" | "apply_patch";
 

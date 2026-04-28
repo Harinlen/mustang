@@ -4,7 +4,7 @@
  */
 
 import * as os from "node:os";
-import { formatBytes, getProjectDir, VERSION } from "@oh-my-pi/pi-utils";
+import { formatBytes, getProjectDir, VERSION } from "@/compat/utils.js";
 
 export interface SystemInfo {
 	os: string;

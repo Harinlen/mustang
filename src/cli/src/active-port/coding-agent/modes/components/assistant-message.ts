@@ -1,7 +1,7 @@
 // @ts-nocheck
-import type { AssistantMessage, ImageContent, Usage } from "@oh-my-pi/pi-ai";
-import { Container, Image, ImageProtocol, Markdown, Spacer, TERMINAL, Text } from "@oh-my-pi/pi-tui";
-import { formatNumber } from "@oh-my-pi/pi-utils";
+import type { AssistantMessage, ImageContent, Usage } from "@/compat/ai.js";
+import { Container, Image, ImageProtocol, Markdown, Spacer, TERMINAL, Text } from "@/tui/index.js";
+import { formatNumber } from "@/compat/utils.js";
 import { settings } from "../../config/settings";
 import { getMarkdownTheme, theme } from "../../modes/theme/theme";
 import { resolveImageOptions } from "../../tools/render-utils";

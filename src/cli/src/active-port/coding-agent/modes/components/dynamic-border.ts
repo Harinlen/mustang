@@ -1,5 +1,5 @@
 // -nocheck
-import type { Component } from "@oh-my-pi/pi-tui";
+import type { Component } from "@/tui/index.js";
 import { theme } from "../../modes/theme/theme";
 
 /**

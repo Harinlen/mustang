@@ -3,7 +3,7 @@
  * Hierarchical tree list rendering helper.
  */
 
-import { replaceTabs } from "@oh-my-pi/pi-tui";
+import { replaceTabs } from "@/tui/index.js";
 import type { Theme } from "../modes/theme/theme";
 import { formatMoreItems } from "../tools/render-utils";
 import type { TreeContext } from "./types";

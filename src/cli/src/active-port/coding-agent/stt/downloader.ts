@@ -1,5 +1,5 @@
 // -nocheck
-import { $which, logger } from "@oh-my-pi/pi-utils";
+import { $which, logger } from "@/compat/utils.js";
 import { $ } from "bun";
 import { resolvePython } from "./transcriber";
 

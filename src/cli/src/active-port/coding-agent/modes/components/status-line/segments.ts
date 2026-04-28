@@ -1,9 +1,9 @@
 // -nocheck
 import * as os from "node:os";
 import * as path from "node:path";
-import { ThinkingLevel } from "@oh-my-pi/pi-agent-core";
-import { TERMINAL } from "@oh-my-pi/pi-tui";
-import { formatDuration, formatNumber, getProjectDir, relativePathWithinRoot } from "@oh-my-pi/pi-utils";
+import { ThinkingLevel } from "@/compat/agent-core.js";
+import { TERMINAL } from "@/tui/index.js";
+import { formatDuration, formatNumber, getProjectDir, relativePathWithinRoot } from "@/compat/utils.js";
 import { theme } from "../../../modes/theme/theme";
 import { shortenPath } from "../../../tools/render-utils";
 import { getSessionAccentAnsi, getSessionAccentHex } from "../../../utils/session-color";

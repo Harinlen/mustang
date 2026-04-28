@@ -284,7 +284,7 @@ Closure seam：
 - `docs/kernel/interfaces/protocol.md`
 - `docs/kernel/subsystems/session.md`
 - `docs/kernel/subsystems/commands.md`
-- `docs/plans/cli-phase-d-session-config-theme.md`
+- `docs/cli/plans/phase-d-session-config-theme.md`
 - `docs/plans/progress.md`
 
 在 ACP routes 真正落地前，CLI Phase D 应把这些能力视为 optional kernel capabilities。

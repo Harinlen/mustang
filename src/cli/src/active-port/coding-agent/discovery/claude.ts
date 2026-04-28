@@ -6,7 +6,7 @@
  * Priority: 80 (tool-specific, below builtin but above shared standards)
  */
 import * as path from "node:path";
-import { hasFsCode, tryParseJson } from "@oh-my-pi/pi-utils";
+import { hasFsCode, tryParseJson } from "@/compat/utils.js";
 import { registerProvider } from "../capability";
 import { type ContextFile, contextFileCapability } from "../capability/context-file";
 import { type ExtensionModule, extensionModuleCapability } from "../capability/extension-module";

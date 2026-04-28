@@ -13,7 +13,7 @@
  * - instructions: *.instructions.md in .github/instructions/ with applyTo frontmatter
  */
 import * as path from "node:path";
-import { parseFrontmatter } from "@oh-my-pi/pi-utils";
+import { parseFrontmatter } from "@/compat/utils.js";
 import { registerProvider } from "../capability";
 import { type ContextFile, contextFileCapability } from "../capability/context-file";
 import { readFile } from "../capability/fs";

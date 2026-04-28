@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { sanitizeText } from "@oh-my-pi/pi-natives";
+import { sanitizeText } from "@/compat/natives.js";
 import { replaceTabs, truncateToWidth, wrapTextWithAnsi } from "../tools/render-utils";
 
 export function formatDebugLogLine(line: string, maxWidth: number): string {

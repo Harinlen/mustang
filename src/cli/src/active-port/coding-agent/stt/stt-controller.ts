@@ -2,7 +2,7 @@
 import * as fs from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
-import { logger, Snowflake } from "@oh-my-pi/pi-utils";
+import { logger, Snowflake } from "@/compat/utils.js";
 import { settings } from "../config/settings";
 import { ensureSTTDependencies } from "./downloader";
 import { type RecordingHandle, startRecording, verifyRecordingFile } from "./recorder";

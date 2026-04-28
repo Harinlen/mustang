@@ -1,7 +1,7 @@
 // @ts-nocheck
 import * as path from "node:path";
-import type { AgentState } from "@oh-my-pi/pi-agent-core";
-import { APP_NAME, isEnoent } from "@oh-my-pi/pi-utils";
+import type { AgentState } from "@/compat/agent-core.js";
+import { APP_NAME, isEnoent } from "@/compat/utils.js";
 import { getResolvedThemeColors, getThemeExportColors } from "../../modes/theme/theme";
 import { type SessionEntry, type SessionHeader, SessionManager } from "../../session/session-manager";
 // Pre-generated template (created by scripts/generate-template.ts at publish time)

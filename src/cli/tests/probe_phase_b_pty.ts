@@ -269,8 +269,8 @@ def expect_order(label, before, after, timeout=8):
     deadline = time.time() + timeout
     while time.time() < deadline:
         text = clean()
-        before_index = text.find(before)
-        after_index = text.find(after)
+        before_index = text.rfind(before)
+        after_index = text.rfind(after)
         if before_index != -1 and after_index != -1 and before_index < after_index:
             print(f"PTY PASS: {label}", flush=True)
             return
@@ -326,6 +326,7 @@ send("show tool\r")
 expect("tool rendering collapsed", ["success grep", "tool-result-line-1", "Ctrl+O for more"])
 expect_order("assistant answer follows tool output", "success grep", "tool done")
 expect_not_after("completed tool is not rebuilt as pending after answer", "tool done", "pending grep")
+expect_not_after("completed tool is not rebuilt after answer", "tool done", "success grep")
 send("\x0f")
 expect("ctrl-o expands tool output", ["success grep", "tool-result-line-12"])
 send("/session delete")

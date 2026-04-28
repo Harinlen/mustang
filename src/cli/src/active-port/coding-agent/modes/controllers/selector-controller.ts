@@ -1,9 +1,9 @@
 // @ts-nocheck
-import { ThinkingLevel } from "@oh-my-pi/pi-agent-core";
-import { getOAuthProviders, type OAuthProvider } from "@oh-my-pi/pi-ai";
-import type { Component } from "@oh-my-pi/pi-tui";
-import { Input, Loader, Spacer, Text } from "@oh-my-pi/pi-tui";
-import { getAgentDbPath, getProjectDir } from "@oh-my-pi/pi-utils";
+import { ThinkingLevel } from "@/compat/agent-core.js";
+import { getOAuthProviders, type OAuthProvider } from "@/compat/ai.js";
+import type { Component } from "@/tui/index.js";
+import { Input, Loader, Spacer, Text } from "@/tui/index.js";
+import { getAgentDbPath, getProjectDir } from "@/compat/utils.js";
 import { getRoleInfo } from "../../config/model-registry";
 import { formatModelSelectorValue } from "../../config/model-resolver";
 import { settings } from "../../config/settings";

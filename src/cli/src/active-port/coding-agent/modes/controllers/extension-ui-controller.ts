@@ -1,5 +1,5 @@
 // -nocheck
-import { Container, Text, type Component, type OverlayHandle, type TUI } from "@oh-my-pi/pi-tui";
+import { Container, Text, type Component, type OverlayHandle, type TUI } from "@/tui/index.js";
 import { KeybindingsManager } from "../../config/keybindings";
 import type { ExtensionUIDialogOptions } from "../../extensibility/extensions";
 import { HookEditorComponent } from "../../modes/components/hook-editor";

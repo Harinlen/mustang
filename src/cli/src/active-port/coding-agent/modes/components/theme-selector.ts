@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { Container, type SelectItem, SelectList } from "@oh-my-pi/pi-tui";
+import { Container, type SelectItem, SelectList } from "@/tui/index.js";
 import { getSelectListTheme } from "../../modes/theme/theme";
 import { DynamicBorder } from "./dynamic-border";
 

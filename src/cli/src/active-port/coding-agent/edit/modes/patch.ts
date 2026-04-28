@@ -8,9 +8,9 @@
 
 import * as fs from "node:fs";
 import * as path from "node:path";
-import type { AgentToolResult } from "@oh-my-pi/pi-agent-core";
-import { StringEnum } from "@oh-my-pi/pi-ai";
-import { isEnoent } from "@oh-my-pi/pi-utils";
+import type { AgentToolResult } from "@/compat/agent-core.js";
+import { StringEnum } from "@/compat/ai.js";
+import { isEnoent } from "@/compat/utils.js";
 import { type Static, Type } from "@sinclair/typebox";
 import {
 	type FileDiagnosticsResult,

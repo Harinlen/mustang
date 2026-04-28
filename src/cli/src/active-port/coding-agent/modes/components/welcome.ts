@@ -1,8 +1,8 @@
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { type Component, padding, truncateToWidth, visibleWidth } from "@oh-my-pi/pi-tui";
-import { APP_NAME } from "@oh-my-pi/pi-utils";
+import { type Component, padding, truncateToWidth, visibleWidth } from "@/tui/index.js";
+import { APP_NAME } from "@/compat/utils.js";
 import { theme } from "../../modes/theme/theme";
 
 const DEFAULT_LOGO: string[] = [];

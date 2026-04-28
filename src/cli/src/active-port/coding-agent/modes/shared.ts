@@ -1,5 +1,5 @@
 // -nocheck
-import type { TabBarTheme } from "@oh-my-pi/pi-tui";
+import type { TabBarTheme } from "@/tui/index.js";
 import { theme } from "./theme/theme";
 
 // ═══════════════════════════════════════════════════════════════════════════

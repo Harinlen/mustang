@@ -15,7 +15,7 @@ import * as nodeFs from "node:fs";
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
 
-import { isEnoent } from "@oh-my-pi/pi-utils";
+import { isEnoent } from "@/compat/utils.js";
 
 import { isValidNameSegment } from "./types";
 

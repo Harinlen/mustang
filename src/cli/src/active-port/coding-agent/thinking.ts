@@ -1,6 +1,6 @@
 // @ts-nocheck
-import { type ResolvedThinkingLevel, ThinkingLevel } from "@oh-my-pi/pi-agent-core";
-import { clampThinkingLevelForModel, type Effort, type Model, THINKING_EFFORTS } from "@oh-my-pi/pi-ai";
+import { type ResolvedThinkingLevel, ThinkingLevel } from "@/compat/agent-core.js";
+import { clampThinkingLevelForModel, type Effort, type Model, THINKING_EFFORTS } from "@/compat/ai.js";
 
 /**
  * Metadata used to render thinking selector values in the coding-agent UI.

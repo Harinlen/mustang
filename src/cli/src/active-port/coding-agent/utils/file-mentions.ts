@@ -8,10 +8,10 @@
  */
 import * as fs from "node:fs/promises";
 import path from "node:path";
-import type { AgentMessage } from "@oh-my-pi/pi-agent-core";
-import type { ImageContent } from "@oh-my-pi/pi-ai";
-import { glob } from "@oh-my-pi/pi-natives";
-import { formatAge, formatBytes, readImageMetadata } from "@oh-my-pi/pi-utils";
+import type { AgentMessage } from "@/compat/agent-core.js";
+import type { ImageContent } from "@/compat/ai.js";
+import { glob } from "@/compat/natives.js";
+import { formatAge, formatBytes, readImageMetadata } from "@/compat/utils.js";
 import { formatHashLines } from "../edit/line-hash";
 import type { FileMentionMessage } from "../session/messages";
 import {

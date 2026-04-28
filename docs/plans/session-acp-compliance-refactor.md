@@ -285,7 +285,7 @@ ToolManager snapshot 也要按 session 过滤 MCP tools。
 - `docs/kernel/interfaces/protocol.md`
 - `docs/kernel/subsystems/session.md`
 - 如果 lifecycle action 顺序有变化，更新 `docs/plans/session-lifecycle-actions.md`
-- `docs/plans/cli-phase-d-session-config-theme.md`
+- `docs/cli/plans/phase-d-session-config-theme.md`
 - `docs/plans/progress.md`
 
 ## 验证矩阵

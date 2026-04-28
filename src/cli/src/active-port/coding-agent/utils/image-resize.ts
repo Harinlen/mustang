@@ -1,6 +1,6 @@
 // @ts-nocheck
-import type { ImageContent } from "@oh-my-pi/pi-ai";
-import { ImageFormat, PhotonImage, SamplingFilter } from "@oh-my-pi/pi-natives";
+import type { ImageContent } from "@/compat/ai.js";
+import { ImageFormat, PhotonImage, SamplingFilter } from "@/compat/natives.js";
 
 export interface ImageResizeOptions {
 	maxWidth?: number; // Default: 1568

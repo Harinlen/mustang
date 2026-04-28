@@ -2,8 +2,8 @@
 /**
  * Edit tool renderer and LSP batching helpers.
  */
-import type { Component } from "@oh-my-pi/pi-tui";
-import { Text, visibleWidth, wrapTextWithAnsi } from "@oh-my-pi/pi-tui";
+import type { Component } from "@/tui/index.js";
+import { Text, visibleWidth, wrapTextWithAnsi } from "@/tui/index.js";
 import type { RenderResultOptions } from "../extensibility/custom-tools/types";
 import type { FileDiagnosticsResult } from "../lsp";
 import { renderDiff as renderDiffColored } from "../modes/components/diff";

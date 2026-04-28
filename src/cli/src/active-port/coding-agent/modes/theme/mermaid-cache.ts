@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { renderMermaidAsciiSafe } from "@oh-my-pi/pi-utils";
+import { renderMermaidAsciiSafe } from "@/compat/utils.js";
 
 const cache = new Map<string, string | null>();
 

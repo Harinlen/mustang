@@ -1,7 +1,7 @@
 // @ts-nocheck
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
-import { getAgentModulesDir, getProjectDir, getProjectModulesDir } from "@oh-my-pi/pi-utils";
+import { getAgentModulesDir, getProjectDir, getProjectModulesDir } from "@/compat/utils.js";
 import { getExecutionCancellationError } from "./cancellation";
 
 export type PythonModuleSource = "user" | "project";

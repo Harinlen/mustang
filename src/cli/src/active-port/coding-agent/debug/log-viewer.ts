@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { sanitizeText } from "@oh-my-pi/pi-natives";
+import { sanitizeText } from "@/compat/natives.js";
 import {
 	type Component,
 	extractPrintableText,
@@ -8,7 +8,7 @@ import {
 	replaceTabs,
 	truncateToWidth,
 	visibleWidth,
-} from "@oh-my-pi/pi-tui";
+} from "@/tui/index.js";
 import { theme } from "../modes/theme/theme";
 import { copyToClipboard } from "../utils/clipboard";
 import {

@@ -8,7 +8,7 @@
  * User directory: ~/.codex
  */
 import * as path from "node:path";
-import { logger, parseFrontmatter } from "@oh-my-pi/pi-utils";
+import { logger, parseFrontmatter } from "@/compat/utils.js";
 import { registerProvider } from "../capability";
 import type { ContextFile } from "../capability/context-file";
 import { contextFileCapability } from "../capability/context-file";

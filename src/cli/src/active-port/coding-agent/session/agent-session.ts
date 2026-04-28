@@ -1,6 +1,6 @@
 // -nocheck
-import type { Agent, AgentMessage } from "@oh-my-pi/pi-agent-core";
-import type { AssistantMessage, Message } from "@oh-my-pi/pi-ai";
+import type { Agent, AgentMessage } from "@/compat/agent-core.js";
+import type { AssistantMessage, Message } from "@/compat/ai.js";
 
 export type AgentSessionEvent =
 	| { type: "message"; message?: AssistantMessage | AgentMessage | Message }

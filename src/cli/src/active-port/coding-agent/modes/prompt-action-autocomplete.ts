@@ -5,7 +5,7 @@ import {
 	CombinedAutocompleteProvider,
 	getKeybindings,
 	type SlashCommand,
-} from "@oh-my-pi/pi-tui";
+} from "@/tui/index.js";
 import { formatKeyHints, type KeybindingsManager } from "../config/keybindings";
 
 interface PromptActionDefinition {

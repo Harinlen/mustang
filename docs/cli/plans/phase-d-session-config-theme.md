@@ -1,6 +1,6 @@
 # CLI Phase D — Session 管理、本地配置与主题计划
 
-**父计划**: [`cli-plan.md`](cli-plan.md)
+**父计划**: [`../roadmap.md`](../roadmap.md)
 **范围**: `src/cli/` TypeScript / Bun client
 **状态**: implemented
 **前置**: Phase A/B/C 已完成；kernel Session ACP compliance + lifecycle actions 已完成；

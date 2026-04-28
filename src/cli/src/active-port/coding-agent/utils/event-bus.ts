@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { logger } from "@oh-my-pi/pi-utils";
+import { logger } from "@/compat/utils.js";
 
 export class EventBus {
 	readonly #listeners = new Map<string, Set<(data: unknown) => void>>();

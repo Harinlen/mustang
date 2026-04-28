@@ -12,7 +12,7 @@
  * - Legacy .windsurfrules file
  */
 
-import { tryParseJson } from "@oh-my-pi/pi-utils";
+import { tryParseJson } from "@/compat/utils.js";
 import { registerProvider } from "../capability";
 import { readFile } from "../capability/fs";
 import { type MCPServer, mcpCapability } from "../capability/mcp";

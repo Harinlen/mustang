@@ -1,6 +1,6 @@
 // @ts-nocheck
-import type { AgentTool } from "@oh-my-pi/pi-agent-core";
-import { sanitizeText } from "@oh-my-pi/pi-natives";
+import type { AgentTool } from "@/compat/agent-core.js";
+import { sanitizeText } from "@/compat/natives.js";
 import {
 	Box,
 	type Component,
@@ -13,8 +13,8 @@ import {
 	TERMINAL,
 	Text,
 	type TUI,
-} from "@oh-my-pi/pi-tui";
-import { getProjectDir, logger } from "@oh-my-pi/pi-utils";
+} from "@/tui/index.js";
+import { getProjectDir, logger } from "@/compat/utils.js";
 import { EDIT_MODE_STRATEGIES, type EditMode, type PerFileDiffPreview } from "../../edit";
 import type { Theme } from "../../modes/theme/theme";
 import { theme } from "../../modes/theme/theme";

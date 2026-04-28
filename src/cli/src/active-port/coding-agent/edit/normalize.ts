@@ -5,7 +5,7 @@
  * Handles line endings, BOM, whitespace, and Unicode normalization.
  */
 
-import { padding } from "@oh-my-pi/pi-tui";
+import { padding } from "@/tui/index.js";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Line Ending Utilities

@@ -1,6 +1,6 @@
 # CLI 客户端实现计划
 
-**设计文档**: [`docs/kernel/interfaces/cli-client.md`](../kernel/interfaces/cli-client.md)
+**设计文档**: [`design.md`](design.md)
 **代码位置**: `src/cli/`
 **技术栈**: TypeScript / Bun
 
@@ -217,7 +217,7 @@ KERNEL_URL=ws://localhost:8765 MUSTANG_TOKEN=dev bun run src/cli/tests/run_all.t
 ### Phase B — 完整 TUI（P1）
 
 详细执行方案已拆分到
-[`docs/plans/cli-phase-b-tui-migration.md`](cli-phase-b-tui-migration.md)。
+[`plans/phase-b-tui-migration.md`](plans/phase-b-tui-migration.md)。
 
 **目标**：按需迁移 oh-my-pi 的 TUI runtime、components、controllers 和
 `interactive-mode.ts` 主路径，让 Mustang CLI 的视觉效果与输入行为和 oh-my-pi
@@ -238,12 +238,12 @@ Phase B 按独立计划执行：
 InteractiveMode 模块激活和验收，避免最小 runtime 或碎片化迁移导致大量自写 UI glue。
 
 **Phase B DoD**：见
-[`cli-phase-b-tui-migration.md#完成标准`](cli-phase-b-tui-migration.md#完成标准)。
+[`plans/phase-b-tui-migration.md#完成标准`](plans/phase-b-tui-migration.md#完成标准)。
 
 **Repair note — 2026-04-28**：当前可运行 CLI 只完成了 Phase B 的 first usable
 path，并未满足 visual/input parity。入口仍走 Mustang 自写 `modes/interactive.ts`，
 `StatusLineComponent` 也被裁成 stub。修复计划见
-[`cli-phase-b-ui-alignment-repair.md`](cli-phase-b-ui-alignment-repair.md)；在该计划完成前，
+[`plans/phase-b-ui-alignment-repair.md`](plans/phase-b-ui-alignment-repair.md)；在该计划完成前，
 不要把 Phase B 视为已达成 "和 oh-my-pi `omp` 完全一致"。
 
 ---
@@ -251,7 +251,7 @@ path，并未满足 visual/input parity。入口仍走 Mustang 自写 `modes/int
 ### Phase C — 工具授权交互（P1） — implemented 2026-04-27
 
 详细执行方案已拆分到
-[`docs/plans/cli-phase-c-permissions.md`](cli-phase-c-permissions.md)。
+[`plans/phase-c-permissions.md`](plans/phase-c-permissions.md)。
 
 **目标**：处理 `session/request_permission` kernel request，用 oh-my-pi
 现有 selector/input overlay 体系展示工具授权、结构化问题和取消流程，并把选择作为
@@ -271,11 +271,11 @@ Phase C 已按独立计划实现：
 - `C6` tests
 
 **Phase C DoD**：见
-[`cli-phase-c-permissions.md#完成标准`](cli-phase-c-permissions.md#完成标准)。
+[`plans/phase-c-permissions.md#完成标准`](plans/phase-c-permissions.md#完成标准)。
 
 **Interactive keybindings gap**：Phase B/C 之后仍有一批 oh-my-pi
 `InputController` 交互未迁移，调查结果见
-[`cli-interactive-keybindings-gap.md`](cli-interactive-keybindings-gap.md)。
+[`audits/interactive-keybindings-gap.md`](audits/interactive-keybindings-gap.md)。
 
 ---
 
@@ -284,7 +284,7 @@ Phase C 已按独立计划实现：
 **状态**：已实现（2026-04-28）。
 
 详细执行方案已拆分到
-[`docs/plans/cli-phase-d-session-config-theme.md`](cli-phase-d-session-config-theme.md)。
+[`plans/phase-d-session-config-theme.md`](plans/phase-d-session-config-theme.md)。
 
 **目标**：补齐长期使用 CLI 所需的 session 选择 / 恢复、本地 client 配置和主题选择。
 CLI 继续保持 thin-client：session 列表和恢复都走 kernel ACP
@@ -304,7 +304,7 @@ Phase D 按独立计划执行：
 - `D7` Phase D 测试矩阵
 
 **Phase D DoD**：见
-[`cli-phase-d-session-config-theme.md#完成标准`](cli-phase-d-session-config-theme.md#完成标准)。
+[`plans/phase-d-session-config-theme.md#完成标准`](plans/phase-d-session-config-theme.md#完成标准)。
 
 ---
 
@@ -419,7 +419,7 @@ src/cli/
 ## 已知风险
 
 CLI Phase B 的风险不能只靠“缓解”。所有 Phase B 风险必须按
-[`cli-phase-b-tui-migration.md#风险根治方案`](cli-phase-b-tui-migration.md#风险根治方案)
+[`plans/phase-b-tui-migration.md#风险根治方案`](plans/phase-b-tui-migration.md#风险根治方案)
 里的根治方案关闭：
 
 - 禁止 active port 直接 import `@oh-my-pi/pi-natives`，由 Mustang compat 完整承接。

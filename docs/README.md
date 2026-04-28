@@ -72,7 +72,19 @@ Protocol 层：两套 stack 都已在 `kernel.routes.stack.create_stack`
 | 文档 | 内容 |
 |---|---|
 | [kernel/interfaces/protocol.md](kernel/interfaces/protocol.md) | Protocol 层 —— ACP 采纳 profile、multi-target dispatch、事件映射、`_meta` 扩展 |
-| [kernel/interfaces/cli-client.md](kernel/interfaces/cli-client.md) | CLI 客户端 —— TypeScript/Bun thin client，TUI 移植自 oh-my-pi，ACP/WS 连接 kernel |
+
+## CLI Docs
+
+代码在 [`../src/cli/`](../src/cli/)。CLI 是 thin ACP/WebSocket client；
+所有 agent runtime、model、tools、memory、session truth 都留在 kernel。
+
+| 文档 | 内容 |
+|---|---|
+| [cli/README.md](cli/README.md) | CLI 文档索引、当前状态、工作分类 |
+| [cli/design.md](cli/design.md) | CLI 客户端设计文档：ACP 边界、TUI active-port、运行时约束 |
+| [cli/roadmap.md](cli/roadmap.md) | CLI 阶段计划与后续 reconnect 等未完成工作 |
+| [cli/plans/](cli/plans/) | 已实现/历史 CLI 计划，保留用于追溯实现决策 |
+| [cli/audits/](cli/audits/) | CLI active-port prune、keybinding parity 等调查/审计文档 |
 
 ### ACP 规范镜像
 
@@ -109,11 +121,7 @@ Protocol 层：两套 stack 都已在 `kernel.routes.stack.create_stack`
 | **Post-impl checklist** | `workflow/code-quality.md` | After writing any code |
 | **Full-repo audit** | `workflow/code-review.md` | When user says "Code Review" |
 | **Future phases** | `plans/roadmap.md` | Planning what's next |
-| **CLI client plan** | [`plans/cli-plan.md`](plans/cli-plan.md) | Implementing the CLI client |
-| **CLI Phase B TUI migration** | [`plans/cli-phase-b-tui-migration.md`](plans/cli-phase-b-tui-migration.md) | On-demand active-port plan for oh-my-pi TUI runtime/components/controllers |
-| **CLI Phase B UI repair** | [`plans/cli-phase-b-ui-alignment-repair.md`](plans/cli-phase-b-ui-alignment-repair.md) | Repair plan for restoring oh-my-pi visual/input parity after the first usable Phase B path drifted |
-| **CLI Phase C permissions** | [`plans/cli-phase-c-permissions.md`](plans/cli-phase-c-permissions.md) | Permission UI migration plan for `session/request_permission` |
-| **CLI Phase D session/config/theme** | [`plans/cli-phase-d-session-config-theme.md`](plans/cli-phase-d-session-config-theme.md) | Session picker, local client config, theme selection, optional kernel autostart |
+| **CLI docs** | [`cli/README.md`](cli/README.md) | CLI design, roadmap, implemented plans, audits |
 | **Session ACP compliance refactor** | [`plans/session-acp-compliance-refactor.md`](plans/session-acp-compliance-refactor.md) | Kernel Session refactor for ACP `SessionInfo`, config options, modes, MCP session setup, cancellation, lifecycle actions |
 | **Session lifecycle actions** | [`plans/session-lifecycle-actions.md`](plans/session-lifecycle-actions.md) | Kernel plan for user-visible session delete, rename, archive/unarchive ACP methods |
 | **Backlog** | `plans/backlog.md` | Deferred features from design docs |

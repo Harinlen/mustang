@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { $env, $flag } from "@oh-my-pi/pi-utils";
+import { $env, $flag } from "@/compat/utils.js";
 
 const SIXEL_START_REGEX = /\x1bP(?:[0-9;]*)q/u;
 const SIXEL_END_SEQUENCE = "\x1b\\";

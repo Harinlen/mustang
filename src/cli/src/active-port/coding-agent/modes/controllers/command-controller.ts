@@ -9,9 +9,9 @@ import {
 	type ToolCall,
 	type UsageLimit,
 	type UsageReport,
-} from "@oh-my-pi/pi-ai";
-import { Loader, Markdown, padding, Spacer, Text, visibleWidth } from "@oh-my-pi/pi-tui";
-import { formatDuration, Snowflake, setProjectDir } from "@oh-my-pi/pi-utils";
+} from "@/compat/ai.js";
+import { Loader, Markdown, padding, Spacer, Text, visibleWidth } from "@/tui/index.js";
+import { formatDuration, Snowflake, setProjectDir } from "@/compat/utils.js";
 import { $ } from "bun";
 import { reset as resetCapabilities } from "../../capability";
 import { clearClaudePluginRootsCache } from "../../discovery/helpers";

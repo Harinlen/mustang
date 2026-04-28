@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { Box, Container, Spacer, Text } from "@oh-my-pi/pi-tui";
+import { Box, Container, Spacer, Text } from "@/tui/index.js";
 import { theme } from "../../modes/theme/theme";
 import type { TodoItem } from "../../tools/todo-write";
 

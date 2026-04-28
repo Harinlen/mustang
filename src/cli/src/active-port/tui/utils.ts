@@ -1,15 +1,15 @@
-import type { Ellipsis, ExtractSegmentsResult, SliceResult } from "@oh-my-pi/pi-natives";
+import type { Ellipsis, ExtractSegmentsResult, SliceResult } from "@/compat/natives.js";
 import {
 	extractSegments as nativeExtractSegments,
 	sliceWithWidth as nativeSliceWithWidth,
 	truncateToWidth as nativeTruncateToWidth,
 	wrapTextWithAnsi as nativeWrapTextWithAnsi,
-} from "@oh-my-pi/pi-natives";
-import { getDefaultTabWidth, getIndentation } from "@oh-my-pi/pi-utils";
+} from "@/compat/natives.js";
+import { getDefaultTabWidth, getIndentation } from "@/compat/utils.js";
 
-export { Ellipsis } from "@oh-my-pi/pi-natives";
+export { Ellipsis } from "@/compat/natives.js";
 
-export { getDefaultTabWidth, getIndentation } from "@oh-my-pi/pi-utils";
+export { getDefaultTabWidth, getIndentation } from "@/compat/utils.js";
 
 export function sliceWithWidth(line: string, startCol: number, length: number, strict?: boolean | null): SliceResult {
 	return nativeSliceWithWidth(line, startCol, length, strict, getDefaultTabWidth());

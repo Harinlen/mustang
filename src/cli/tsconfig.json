@@ -8,12 +8,7 @@
     "strictNullChecks": false,
     "types": ["bun"],
     "paths": {
-      "@/*": ["./src/*"],
-      "@oh-my-pi/pi-tui": ["./src/active-port/tui/index.ts"],
-      "@oh-my-pi/pi-utils": ["./src/compat/pi-utils.ts"],
-      "@oh-my-pi/pi-natives": ["./src/compat/pi-natives.ts"],
-      "@oh-my-pi/pi-ai": ["./src/compat/pi-ai.ts"],
-      "@oh-my-pi/pi-agent-core": ["./src/compat/pi-agent-core.ts"]
+      "@/*": ["./src/*"]
     }
   },
   "include": ["src/**/*", "tests/**/*"],

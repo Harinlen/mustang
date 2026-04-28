@@ -5,7 +5,7 @@
  * Reads a file via Bun and rethrows ENOENT as a user-facing "File not found"
  * error referencing the display path.
  */
-import { isEnoent } from "@oh-my-pi/pi-utils";
+import { isEnoent } from "@/compat/utils.js";
 
 export async function readEditFileText(absolutePath: string, path: string): Promise<string> {
 	try {

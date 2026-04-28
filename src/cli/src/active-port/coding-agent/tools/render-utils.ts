@@ -1,5 +1,5 @@
 // -nocheck
-import { replaceTabs, truncateToWidth, wrapTextWithAnsi } from "@oh-my-pi/pi-tui";
+import { replaceTabs, truncateToWidth, wrapTextWithAnsi } from "@/tui/index.js";
 import { settings } from "../config/settings";
 
 export { replaceTabs, truncateToWidth, wrapTextWithAnsi };

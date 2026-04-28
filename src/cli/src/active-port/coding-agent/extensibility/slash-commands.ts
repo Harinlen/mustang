@@ -1,5 +1,5 @@
 // @ts-nocheck
-import type { SlashCommand } from "@oh-my-pi/pi-tui";
+import type { SlashCommand } from "@/tui/index.js";
 
 type Item = { value: string; label?: string; description?: string };
 

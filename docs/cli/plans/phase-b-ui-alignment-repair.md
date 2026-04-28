@@ -1,9 +1,9 @@
 # CLI Phase B UI 对齐修复计划
 
-**父计划**: [`cli-plan.md`](cli-plan.md)  
-**原 Phase B 计划**: [`cli-phase-b-tui-migration.md`](cli-phase-b-tui-migration.md)  
-**范围**: `src/cli/` TypeScript / Bun client  
-**状态**: implemented — R1/R2/R3/R4/R5/R6 main Phase B repair gates complete  
+**父计划**: [`../roadmap.md`](../roadmap.md)
+**原 Phase B 计划**: [`phase-b-tui-migration.md`](phase-b-tui-migration.md)
+**范围**: `src/cli/` TypeScript / Bun client
+**状态**: implemented — R1/R2/R3/R4/R5/R6 main Phase B repair gates complete
 **优先级**: P0，必须先于后续 CLI 功能开发
 
 **2026-04-28 对齐快照**: kernel Session ACP compliance、session lifecycle

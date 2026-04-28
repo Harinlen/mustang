@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { $which } from "@oh-my-pi/pi-utils";
+import { $which } from "@/compat/utils.js";
 import { theme } from "../../modes/theme/theme";
 import type { DoctorCheck } from "./types";
 

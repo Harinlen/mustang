@@ -1,6 +1,6 @@
 # CLI Phase C — 权限交互 UI 迁移计划
 
-**父计划**: [`cli-plan.md`](cli-plan.md)
+**父计划**: [`../roadmap.md`](../roadmap.md)
 **范围**: `src/cli/` TypeScript / Bun client
 **状态**: implemented — 2026-04-27
 

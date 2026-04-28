@@ -1,6 +1,6 @@
 // -nocheck
 import * as fs from "node:fs/promises";
-import { isEnoent } from "@oh-my-pi/pi-utils";
+import { isEnoent } from "@/compat/utils.js";
 import { resolveLocalUrlToPath } from "../internal-urls";
 import { normalizeLocalScheme } from "../tools/path-utils";
 

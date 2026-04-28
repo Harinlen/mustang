@@ -1,8 +1,8 @@
 // -nocheck
 import * as fs from "node:fs/promises";
 import * as nodePath from "node:path";
-import type { AgentToolResult } from "@oh-my-pi/pi-agent-core";
-import { StringEnum } from "@oh-my-pi/pi-coding-agent";
+import type { AgentToolResult } from "@/compat/agent-core.js";
+import { StringEnum } from "@/compat/ai.js";
 import {
 	ChunkAnchorStyle,
 	ChunkEditOp,
@@ -12,8 +12,8 @@ import {
 	ChunkRegion,
 	ChunkState,
 	type EditOperation as NativeEditOperation,
-} from "@oh-my-pi/pi-natives";
-import { $envpos } from "@oh-my-pi/pi-utils";
+} from "@/compat/natives.js";
+import { $envpos } from "@/compat/utils.js";
 import { type Static, Type } from "@sinclair/typebox";
 import type { BunFile } from "bun";
 import { LRUCache } from "lru-cache";

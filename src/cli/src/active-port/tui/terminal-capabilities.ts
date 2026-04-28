@@ -1,5 +1,5 @@
-import { encodeSixel } from "@oh-my-pi/pi-natives";
-import { $env } from "@oh-my-pi/pi-utils";
+import { encodeSixel } from "@/compat/natives.js";
+import { $env } from "@/compat/utils.js";
 
 export enum ImageProtocol {
 	Kitty = "\x1b_G",
